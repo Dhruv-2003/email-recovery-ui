@@ -27,6 +27,12 @@ import { useGetSafeAccountAddress } from "../../utils/useGetSafeAccountAddress";
 import { Button } from "../Button";
 import InputField from "../InputField";
 import Loader from "../Loader";
+import { getSafeAccount, owner, publicClient } from "./client";
+import { keccak256, parseAbiParameters } from "viem";
+import { encodeAbiParameters } from "viem";
+import { encodeFunctionData } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { CompleteRecoveryResponseSchema } from "./types";
 
 const BUTTON_STATES = {
   TRIGGER_RECOVERY: "Trigger Recovery",
@@ -36,14 +42,13 @@ const BUTTON_STATES = {
 };
 
 const RequestedRecoveries = () => {
-  const address = useGetSafeAccountAddress();
   const { guardianEmail } = useAppContext();
   const navigate = useNavigate();
   const { burnerAccountClient } = useBurnerAccount();
   const stepsContext = useContext(StepsContext);
 
   const [newOwner, setNewOwner] = useState<`0x${string}`>();
-  const safeWalletAddress = address as `0x${string}`;
+
   const [guardianEmailAddress, setGuardianEmailAddress] =
     useState(guardianEmail);
   const [buttonState, setButtonState] = useState(
@@ -62,21 +67,27 @@ const RequestedRecoveries = () => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const checkIfRecoveryCanBeCompleted = useCallback(async () => {
+    const owner = privateKeyToAccount(
+      "0x9ef1a6de7dd5bfede20283c1d41b3b8589915c9b47ce9eea381ba53cb82409a4"
+    );
+
+    const safeAccount = await getSafeAccount(owner);
+
     setIsRecoveryStatusLoading(true);
-    const getRecoveryRequest = await readContract(config, {
+    const getRecoveryRequest = await publicClient.readContract({
       abi: universalEmailRecoveryModuleAbi,
       address: universalEmailRecoveryModule as `0x${string}`,
       functionName: "getRecoveryRequest",
-      args: [address],
+      args: [safeAccount.address],
     });
 
     console.log(getRecoveryRequest);
 
-    const getGuardianConfig = await readContract(config, {
+    const getGuardianConfig = await publicClient.readContract({
       abi: universalEmailRecoveryModuleAbi,
       address: universalEmailRecoveryModule as `0x${string}`,
       functionName: "getGuardianConfig",
-      args: [address],
+      args: [safeAccount.address],
     });
 
     // Update the button state based on the condition. The current weight represents the number of users who have confirmed the email, and the threshold indicates the number of confirmations required before the complete recovery can be called
@@ -87,7 +98,7 @@ const RequestedRecoveries = () => {
       clearInterval(intervalRef.current);
     }
     setIsRecoveryStatusLoading(false);
-  }, [address, intervalRef]);
+  }, [intervalRef]);
 
   useEffect(() => {
     checkIfRecoveryCanBeCompleted();
@@ -101,9 +112,9 @@ const RequestedRecoveries = () => {
         background: "white",
       },
     });
-    if (!safeWalletAddress) {
-      throw new Error("unable to get account address");
-    }
+    // if (!safeWalletAddress) {
+    //   throw new Error("unable to get account address");
+    // }
 
     if (!guardianEmailAddress) {
       throw new Error("guardian email not set");
@@ -115,23 +126,59 @@ const RequestedRecoveries = () => {
 
     // const recoveryCallData = getRecoveryCallData(newOwner);
 
-    const safeOwnersData = (await readContract(config, {
-      address: safeWalletAddress,
+    const owner = privateKeyToAccount(
+      "0x9ef1a6de7dd5bfede20283c1d41b3b8589915c9b47ce9eea381ba53cb82409a4"
+    );
+
+    const safeAccount = await getSafeAccount(owner);
+
+    const safeOwners = await publicClient.readContract({
       abi: safeAbi,
+      address: safeAccount.address,
       functionName: "getOwners",
       args: [],
-    })) as `0x${string}`[];
-    if (!safeOwnersData) {
-      throw new Error("safe owners data not found");
-    }
+    });
+
+    const oldOwner = owner.address;
+    const previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
+      oldOwner,
+      safeOwners
+    );
 
     // This function fetches the command template for the recoveryRequest API call. The command template will be in the following format: ['Recover', 'account', '{ethAddr}', 'using', 'recovery', 'hash', '{string}']
-    const command = (await readContract(config, {
+    // const command = (await readContract(config, {
+    //   abi: universalEmailRecoveryModuleAbi,
+    //   address: universalEmailRecoveryModule as `0x${string}`,
+    //   functionName: "recoveryCommandTemplates",
+    //   args: [],
+    // })) as [][];
+
+    const recoveryCallData = encodeFunctionData({
+      abi: safeAbi,
+      functionName: "swapOwner",
+      args: [previousOwnerInLinkedList, oldOwner, newOwner],
+    });
+
+    const recoveryData = encodeAbiParameters(
+      parseAbiParameters("address, bytes"),
+      [safeAccount.address, recoveryCallData]
+    );
+
+    const templateIdx = 0;
+    const recoveryCommandTemplates = await publicClient.readContract({
       abi: universalEmailRecoveryModuleAbi,
       address: universalEmailRecoveryModule as `0x${string}`,
       functionName: "recoveryCommandTemplates",
       args: [],
-    })) as [][];
+    });
+
+    const recoveryDataHash = keccak256(recoveryData);
+
+    const processRecoveryCommand = recoveryCommandTemplates[0]
+      ?.join()
+      .replaceAll(",", " ")
+      .replace("{ethAddr}", safeAccount.address)
+      .replace("{string}", recoveryDataHash);
 
     try {
       // requestId
@@ -139,12 +186,7 @@ const RequestedRecoveries = () => {
         universalEmailRecoveryModule as string,
         guardianEmailAddress,
         templateIdx,
-        command[0]
-          .join()
-          ?.replaceAll(",", " ")
-          .replace("{ethAddr}", safeWalletAddress)
-          .replace("{ethAddr}", safeOwnersData[0])
-          .replace("{ethAddr}", newOwner)
+        processRecoveryCommand
       );
 
       intervalRef.current = setInterval(() => {
@@ -155,48 +197,75 @@ const RequestedRecoveries = () => {
       toast.error("Something went wrong while requesting recovery");
       setIsTriggerRecoveryLoading(false);
     }
-  }, [
-    safeWalletAddress,
-    guardianEmailAddress,
-    newOwner,
-    checkIfRecoveryCanBeCompleted,
-  ]);
+  }, [guardianEmailAddress, newOwner, checkIfRecoveryCanBeCompleted]);
 
   const completeRecovery = useCallback(async () => {
+    const owner = privateKeyToAccount(
+      "0x9ef1a6de7dd5bfede20283c1d41b3b8589915c9b47ce9eea381ba53cb82409a4"
+    );
+
+    const safeAccount = await getSafeAccount(owner);
+
     setIsCompleteRecoveryLoading(true);
+
+    const recoveryRequest = await publicClient.readContract({
+      abi: universalEmailRecoveryModuleAbi,
+      address: universalEmailRecoveryModule as `0x${string}`,
+      functionName: "getRecoveryRequest",
+      args: [safeAccount.address],
+    });
 
     // const recoveryCallData = getRecoveryCallData(newOwner!);
 
-    const safeOwnersData = (await readContract(config, {
-      address: safeWalletAddress,
-      abi: safeAbi,
-      functionName: "getOwners",
-      args: [],
-    })) as `0x${string}`[];
-    if (!safeOwnersData) {
-      throw new Error("safe owners data not found");
+    const block = await publicClient.getBlock();
+    if (recoveryRequest.executeAfter == 0n) {
+      throw new Error("Recovery request for account not found");
     }
 
-    const prevOwner = getPreviousOwnerInLinkedList(
-      safeOwnersData[0],
-      safeOwnersData
-    );
+    if (block.timestamp < recoveryRequest.executeAfter) {
+      const timeLeft = recoveryRequest.executeAfter - block.timestamp;
+      throw new Error(
+        `Recovery delay has not passed. You have ${timeLeft} seconds left.`
+      );
+    }
 
-    const recoveryCallData = getRecoveryCallData(
-      prevOwner,
-      safeOwnersData[0],
-      newOwner!
-    );
-    const recoveryData = getRecoveryData(safeWalletAddress, recoveryCallData);
+    const safeOwners = await publicClient.readContract({
+      abi: safeAbi,
+      address: safeAccount.address,
+      functionName: "getOwners",
+      args: [],
+    });
 
-    // const recoveryData = getRecoveryData(validatorsAddress, recoveryCallData);
+    const oldOwner = owner.address;
+    const previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
+      oldOwner,
+      safeOwners
+    );
+    const newOwner = config.newOwner;
+
+    const recoveryCallData = encodeFunctionData({
+      abi: safeAbi,
+      functionName: "swapOwner",
+      args: [previousOwnerInLinkedList, oldOwner, newOwner],
+    });
+
+    const recoveryData = encodeAbiParameters(
+      parseAbiParameters("address, bytes"),
+      [safeAccount.address, recoveryCallData]
+    );
 
     try {
-      await relayer.completeRecovery(
+      const completeRecoveryResponse = await relayer.completeRecovery(
         universalEmailRecoveryModule as string,
-        safeWalletAddress as string,
+        safeAccount.address,
         recoveryData
       );
+
+      if (completeRecoveryResponse.status === 200) {
+        const completeRecoveryResponseData =
+          CompleteRecoveryResponseSchema.parse(completeRecoveryResponse.data);
+        console.log("Result:", completeRecoveryResponseData);
+      }
 
       setButtonState(BUTTON_STATES.RECOVERY_COMPLETED);
     } catch (err) {
@@ -204,7 +273,7 @@ const RequestedRecoveries = () => {
     } finally {
       setIsCompleteRecoveryLoading(false);
     }
-  }, [newOwner, safeWalletAddress]);
+  }, [newOwner]);
 
   const handleCancelRecovery = useCallback(async () => {
     setIsCancelRecoveryLoading(true);
@@ -226,7 +295,7 @@ const RequestedRecoveries = () => {
     } finally {
       setIsCancelRecoveryLoading(false);
     }
-  }, [newOwner, safeWalletAddress]);
+  }, [newOwner]);
 
   const getButtonComponent = () => {
     // Renders the appropriate buttons based on the button state.
@@ -264,15 +333,15 @@ const RequestedRecoveries = () => {
 
   console.log(isRecoveryStatusLoading);
 
-  // Since we are polling for every actions but only wants to show full screen loader for the initial request
-  if (
-    isRecoveryStatusLoading &&
-    !isTriggerRecoveryLoading &&
-    !isCompleteRecoveryLoading &&
-    !isCancelRecoveryLoading
-  ) {
-    return <Loader />;
-  }
+  // // Since we are polling for every actions but only wants to show full screen loader for the initial request
+  // if (
+  //   isRecoveryStatusLoading &&
+  //   !isTriggerRecoveryLoading &&
+  //   !isCompleteRecoveryLoading &&
+  //   !isCancelRecoveryLoading
+  // ) {
+  //   return <Loader />;
+  // }
 
   return (
     <Box>
