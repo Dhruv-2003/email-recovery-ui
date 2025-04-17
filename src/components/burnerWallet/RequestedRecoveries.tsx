@@ -67,9 +67,8 @@ const RequestedRecoveries = () => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const checkIfRecoveryCanBeCompleted = useCallback(async () => {
-    const owner = privateKeyToAccount(
-      "0x9ef1a6de7dd5bfede20283c1d41b3b8589915c9b47ce9eea381ba53cb82409a4"
-    );
+    const ownerPrivateKey = localStorage.getItem("newOwnerPrivateKey");
+    const owner = privateKeyToAccount(ownerPrivateKey as `0x${string}`);
 
     const safeAccount = await getSafeAccount(owner);
 
@@ -89,6 +88,8 @@ const RequestedRecoveries = () => {
       functionName: "getGuardianConfig",
       args: [safeAccount.address],
     });
+
+    console.log(getGuardianConfig, "getGuardianConfig");
 
     // Update the button state based on the condition. The current weight represents the number of users who have confirmed the email, and the threshold indicates the number of confirmations required before the complete recovery can be called
     if (getRecoveryRequest.currentWeight < getGuardianConfig.threshold) {
@@ -126,9 +127,8 @@ const RequestedRecoveries = () => {
 
     // const recoveryCallData = getRecoveryCallData(newOwner);
 
-    const owner = privateKeyToAccount(
-      "0x9ef1a6de7dd5bfede20283c1d41b3b8589915c9b47ce9eea381ba53cb82409a4"
-    );
+    const ownerPrivateKey = localStorage.getItem("newOwnerPrivateKey");
+    const owner = privateKeyToAccount(ownerPrivateKey as `0x${string}`);
 
     const safeAccount = await getSafeAccount(owner);
 
@@ -200,61 +200,62 @@ const RequestedRecoveries = () => {
   }, [guardianEmailAddress, newOwner, checkIfRecoveryCanBeCompleted]);
 
   const completeRecovery = useCallback(async () => {
-    const owner = privateKeyToAccount(
-      "0x9ef1a6de7dd5bfede20283c1d41b3b8589915c9b47ce9eea381ba53cb82409a4"
-    );
+    const ownerPrivateKey = localStorage.getItem("newOwnerPrivateKey");
+    const owner = privateKeyToAccount(ownerPrivateKey as `0x${string}`);
 
     const safeAccount = await getSafeAccount(owner);
-
     setIsCompleteRecoveryLoading(true);
-
-    const recoveryRequest = await publicClient.readContract({
-      abi: universalEmailRecoveryModuleAbi,
-      address: universalEmailRecoveryModule as `0x${string}`,
-      functionName: "getRecoveryRequest",
-      args: [safeAccount.address],
-    });
-
-    // const recoveryCallData = getRecoveryCallData(newOwner!);
-
-    const block = await publicClient.getBlock();
-    if (recoveryRequest.executeAfter == 0n) {
-      throw new Error("Recovery request for account not found");
-    }
-
-    if (block.timestamp < recoveryRequest.executeAfter) {
-      const timeLeft = recoveryRequest.executeAfter - block.timestamp;
-      throw new Error(
-        `Recovery delay has not passed. You have ${timeLeft} seconds left.`
-      );
-    }
-
-    const safeOwners = await publicClient.readContract({
-      abi: safeAbi,
-      address: safeAccount.address,
-      functionName: "getOwners",
-      args: [],
-    });
-
-    const oldOwner = owner.address;
-    const previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
-      oldOwner,
-      safeOwners
-    );
-    const newOwner = config.newOwner;
-
-    const recoveryCallData = encodeFunctionData({
-      abi: safeAbi,
-      functionName: "swapOwner",
-      args: [previousOwnerInLinkedList, oldOwner, newOwner],
-    });
-
-    const recoveryData = encodeAbiParameters(
-      parseAbiParameters("address, bytes"),
-      [safeAccount.address, recoveryCallData]
-    );
-
     try {
+      const recoveryRequest = await publicClient.readContract({
+        abi: universalEmailRecoveryModuleAbi,
+        address: universalEmailRecoveryModule as `0x${string}`,
+        functionName: "getRecoveryRequest",
+        args: [safeAccount.address],
+      });
+
+      // const recoveryCallData = getRecoveryCallData(newOwner!);
+
+      const block = await publicClient.getBlock();
+      if (recoveryRequest.executeAfter == 0n) {
+        toast.error("Recovery request for account not found");
+        throw new Error("Recovery request for account not found");
+      }
+
+      if (block.timestamp < recoveryRequest.executeAfter) {
+        const timeLeft = recoveryRequest.executeAfter - block.timestamp;
+        toast.error(
+          `Recovery delay has not passed. You have ${timeLeft} seconds left.`
+        );
+        throw new Error(
+          `Recovery delay has not passed. You have ${timeLeft} seconds left.`
+        );
+      }
+
+      const safeOwners = await publicClient.readContract({
+        abi: safeAbi,
+        address: safeAccount.address,
+        functionName: "getOwners",
+        args: [],
+      });
+
+      const oldOwner = owner.address;
+      const previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
+        oldOwner,
+        safeOwners
+      );
+      const newOwner = config.newOwner;
+
+      const recoveryCallData = encodeFunctionData({
+        abi: safeAbi,
+        functionName: "swapOwner",
+        args: [previousOwnerInLinkedList, oldOwner, newOwner],
+      });
+
+      const recoveryData = encodeAbiParameters(
+        parseAbiParameters("address, bytes"),
+        [safeAccount.address, recoveryCallData]
+      );
+
       const completeRecoveryResponse = await relayer.completeRecovery(
         universalEmailRecoveryModule as string,
         safeAccount.address,
@@ -269,6 +270,7 @@ const RequestedRecoveries = () => {
 
       setButtonState(BUTTON_STATES.RECOVERY_COMPLETED);
     } catch (err) {
+      console.log(err);
       toast.error("Something went wrong while completing recovery process");
     } finally {
       setIsCompleteRecoveryLoading(false);

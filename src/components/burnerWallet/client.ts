@@ -42,8 +42,6 @@ export const pimlicoClient: PimlicoClient = createPimlicoClient({
   chain: baseSepolia,
 });
 
-export const owner = privateKeyToAccount("0x9ef1a6de7dd5bfede20283c1d41b3b8589915c9b47ce9eea381ba53cb82409a4");
-
 export const getSafeAccount = async (
   owner: PrivateKeyAccount
 ): Promise<SmartAccount<SafeSmartAccountImplementation>> => {

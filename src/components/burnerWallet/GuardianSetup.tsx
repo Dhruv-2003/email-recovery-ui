@@ -11,11 +11,11 @@ import {
 } from "@mui/material";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { createWalletClient, custom, WalletClient } from "viem";
-import { baseSepolia } from "viem/chains";
+import { privateKeyToAccount } from "viem/accounts";
 import { readContract } from "wagmi/actions";
 import { getSafeAccount, publicClient } from "./client";
 import { getSmartAccountClient } from "./client";
+import config from "./config";
 import { run } from "./deploy";
 import { universalEmailRecoveryModule } from "../../../contracts.base-sepolia.json";
 import { abi as universalEmailRecoveryModuleAbi } from "../../abi/UniversalEmailRecoveryModule.json";
@@ -25,14 +25,13 @@ import { STEPS } from "../../constants";
 import { useAppContext } from "../../context/AppContextHook";
 import { useBurnerAccount } from "../../context/BurnerAccountContext";
 // import { config } from "../../providers/config";
+import { config as connectKitConfig } from "../../providers/config";
 import { relayer } from "../../services/relayer";
 import { genAccountCode, templateIdx } from "../../utils/email";
 import { TIME_UNITS } from "../../utils/recoveryDataUtils";
 import { useGetSafeAccountAddress } from "../../utils/useGetSafeAccountAddress";
 import { Button } from "../Button";
 import Loader from "../Loader";
-import { privateKeyToAccount } from "viem/accounts";
-import config from "./config";
 
 //logic for valid email address check for input
 const isValidEmail = (email: string) => {
@@ -40,15 +39,14 @@ const isValidEmail = (email: string) => {
   return re.test(String(email).toLowerCase());
 };
 
-const owner = privateKeyToAccount(
-  "0x9ef1a6de7dd5bfede20283c1d41b3b8589915c9b47ce9eea381ba53cb82409a4"
-);
-
-console.log(owner, "owner")   
-
 const GuardianSetup = () => {
   const address = useGetSafeAccountAddress();
   const { setBurnerAccountClient } = useBurnerAccount();
+  const ownerPrivateKey = localStorage.getItem("newOwnerPrivateKey");
+  let owner;
+  if (ownerPrivateKey) {
+    owner = privateKeyToAccount(ownerPrivateKey as `0x${string}`);
+  }
 
   const { guardianEmail, setGuardianEmail, accountCode, setAccountCode } =
     useAppContext();
@@ -81,27 +79,27 @@ const GuardianSetup = () => {
 
   const checkIfRecoveryIsConfigured = useCallback(async () => {
     let burnerWalletAddress;
-    const burnerWalletConfig = localStorage.getItem("burnerWalletConfig");
+    const safeAccount = localStorage.getItem("safeAccount");
 
-    if (burnerWalletConfig) {
-      burnerWalletAddress = JSON.parse(burnerWalletConfig).burnerWalletAddress;
+    if (safeAccount) {
+      burnerWalletAddress = JSON.parse(safeAccount).address;
     }
 
     if (!burnerWalletAddress) {
       return;
     }
 
-    console.log(burnerWalletAddress, "burnerWalletAddress")
+    console.log(burnerWalletAddress, "burnerWalletAddress");
 
     setIsAccountInitializedLoading(true);
-    const getGuardianConfig = await readContract(config, {
+    const getGuardianConfig = await readContract(connectKitConfig, {
       abi: universalEmailRecoveryModuleAbi,
       address: universalEmailRecoveryModule as `0x${string}`,
       functionName: "getGuardianConfig",
       args: [burnerWalletAddress],
     });
 
-    console.log(getGuardianConfig, "getGuardianConfig")
+    console.log(getGuardianConfig, "getGuardianConfig");
 
     // Check whether recovery is configured
     if (
@@ -117,22 +115,7 @@ const GuardianSetup = () => {
   const connectWallet = async () => {
     setIsBurnerWalletCreating(true);
 
-    // Assuming install function sets the account
-    const addresses = await window.ethereum.request({
-      method: "eth_requestAccounts",
-    }); // Cast the result to string[]
-    const [address] = addresses;
-
     try {
-      // Creating new wallet client
-      const client: WalletClient = createWalletClient({
-        account: address, // Type assertion to match the expected format
-        chain: baseSepolia,
-        transport: custom(window.ethereum),
-      });
-
-      console.log(address);
-
       const safeAccount = await getSafeAccount(owner);
       const smartAccountClient = await getSmartAccountClient(owner);
 
@@ -141,16 +124,16 @@ const GuardianSetup = () => {
       setSaltNonce(newSaltNonce);
       localStorage.setItem("saltNonce", newSaltNonce.toString());
 
-      console.log(saltNonce, "saltNonce")
+      console.log(saltNonce, "saltNonce");
 
       const acctCode: `0x${string}` = await genAccountCode();
 
-      console.log(acctCode, "acctcode")
+      console.log(acctCode, "acctcode");
 
       await localStorage.setItem("accountCode", acctCode);
       await setAccountCode(acctCode);
 
-      console.log(accountCode, acctCode, "accountCode")
+      console.log(accountCode, acctCode, "accountCode");
 
       await localStorage.setItem("safeAccount", JSON.stringify(safeAccount));
       localStorage.setItem(
@@ -158,7 +141,7 @@ const GuardianSetup = () => {
         JSON.stringify(smartAccountClient)
       );
 
-      console.log(safeAccount, "safeaccount")
+      console.log(safeAccount, "safeaccount");
 
       setBurnerAccountClient(smartAccountClient);
 
@@ -169,13 +152,13 @@ const GuardianSetup = () => {
         safeAccount,
         smartAccountClient
       );
-      console.log(burnerWalletAddress, "burnerwllet")
+      console.log(burnerWalletAddress, "burnerwllet");
       await localStorage.setItem(
         "burnerWalletConfig",
         JSON.stringify({ burnerWalletAddress })
       );
 
-      console.log(burnerWalletAddress, "burnerwalletddress")
+      console.log(burnerWalletAddress, "burnerwalletddress");
       setIsWalletPresent(true);
     } catch (error) {
       console.log(error);
@@ -184,8 +167,6 @@ const GuardianSetup = () => {
       setIsBurnerWalletCreating(false);
     }
   };
-
-  checkIfRecoveryIsConfigured();
 
   useEffect(() => {
     checkIfRecoveryIsConfigured();
@@ -418,22 +399,6 @@ const GuardianSetup = () => {
             </Grid>
           </Grid>
         </Grid>
-
-        {/* <InputField
-              placeholderText="guardian@prove.email"
-              type="email"
-              tooltipTitle="Enter the email address of the guardian you want to set up for account recovery"
-              value={guardianEmail}
-              onChange={(e) => setGuardianEmail(e.target.value)}
-              label={`Guardian's Email`}
-              locked={false}
-              {...(guardianEmail && {
-                status: emailError ? "error" : "okay",
-                statusNote: emailError
-                  ? "Please enter the correct email address"
-                  : "Okay",
-              })}
-            /> */}
 
         <Grid item sx={{ marginX: "auto" }}>
           <Box

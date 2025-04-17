@@ -18,9 +18,11 @@ import { Button } from "../components/Button";
 import WalletActions from "../components/WalletActions";
 import { STEPS } from "../constants";
 import { BurnerAccountProvider } from "../context/BurnerAccountContext";
+import { generateNewAccount } from "../components/burnerWallet/helpers/generateNewAccount";
 
 const BurnerWalletFlow = () => {
   const stepsContext = useContext(StepsContext);
+  const [ownerAddress, setOwnerAddress] = useState<string | null>(null);
   const [burnerWalletAddress, setBurnerWalletAddress] = useState<
     string | null
   >();
@@ -44,6 +46,12 @@ const BurnerWalletFlow = () => {
   }, [burnerWalletAddress]);
 
   useEffect(() => {
+    generateNewAccount().then((newAccount) => {
+      setOwnerAddress(newAccount.address);
+      localStorage.setItem("newOwner", newAccount.address);
+      localStorage.setItem("newOwnerPrivateKey", newAccount.privateKey);
+    });
+
     const handleBeforeUnload = (event) => {
       // Standard across browsers (Chrome, Firefox, etc.)
       event.preventDefault();
@@ -87,6 +95,28 @@ const BurnerWalletFlow = () => {
   return (
     <BurnerAccountProvider>
       <div className="app">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: "4px",
+            marginBottom: "16px",
+          }}
+        >
+          <Typography>New Owner Address: </Typography>
+          <Typography>{localStorage.getItem("newOwner")}</Typography>
+          <Tooltip title="Reset Wallet" placement="top">
+            <IconButton
+              onClick={async () => {
+                localStorage.clear();
+                window.location.reload();
+              }}
+            >
+              <RestartAltIcon />
+            </IconButton>
+          </Tooltip>
+        </div>
         {burnerWalletAddress ? (
           <div
             style={{
