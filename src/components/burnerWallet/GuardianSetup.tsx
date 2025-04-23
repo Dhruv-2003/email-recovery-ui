@@ -54,15 +54,12 @@ const GuardianSetup = () => {
   const [loading, setLoading] = useState(false);
 
   // 0 = 2 week default delay, don't do for demo
-  const [recoveryDelay, setRecoveryDelay] = useState(1);
+  const [recoveryDelay, setRecoveryDelay] = useState(6);
   const [isWalletPresent, setIsWalletPresent] = useState(false);
   const [emailError, setEmailError] = useState(false);
   const [recoveryDelayUnit, setRecoveryDelayUnit] = useState(
-    TIME_UNITS.SECS.value,
+    TIME_UNITS.HOURS.value,
   );
-  // const [recoveryExpiryUnit, setRecoveryExpiryUnit] = useState(
-  //   TIME_UNITS.DAYS.value,
-  // );
   const [isBurnerWalletCreating, setIsBurnerWalletCreating] = useState(false);
 
   // A new account code must be created for each session to enable the creation of a new wallet, and it will be used throughout the demo flow
@@ -148,6 +145,7 @@ const GuardianSetup = () => {
         guardianEmail,
         safeAccount,
         smartAccountClient,
+        recoveryDelay * TIME_UNITS[recoveryDelayUnit].multiplier,
       );
       console.log(burnerWalletAddress, "burnerwallet");
       await localStorage.setItem(
@@ -359,34 +357,48 @@ const GuardianSetup = () => {
                 </IconButton>
               </Tooltip>
             </Grid>
-            <Grid item container xs={"auto"} gap={2}>
-              <TextField
-                type="number"
-                size="small"
-                sx={{ maxWidth: "6rem" }}
-                value={recoveryDelay}
-                onChange={(e) =>
-                  setRecoveryDelay(
-                    parseInt((e.target as HTMLInputElement).value),
-                  )
-                }
-                title="Recovery Delay"
-                // helperText="This is the delay you the actual wallet owner has to cancel recovery after recovery has been initiated, helpful for preventing malicious behavior from guardians."
-              />
+            <Grid item container xs gap={2}>
+              <Grid item container xs={12} gap={2}>
+                <TextField
+                  type="number"
+                  size="small"
+                  sx={{ maxWidth: "6rem" }}
+                  value={recoveryDelay}
+                  onChange={(e) =>
+                    setRecoveryDelay(
+                      parseInt((e.target as HTMLInputElement).value),
+                    )
+                  }
+                  error={
+                    recoveryDelay * TIME_UNITS[recoveryDelayUnit].multiplier <
+                    21600
+                  }
+                  title="Recovery Delay"
+                  // helperText="This is the delay you the actual wallet owner has to cancel recovery after recovery has been initiated, helpful for preventing malicious behavior from guardians."
+                />
 
-              <Select
-                value={recoveryDelayUnit}
-                size="small"
-                onChange={(e) => setRecoveryDelayUnit(e.target.value)}
-              >
-                {Object.keys(TIME_UNITS).map((timeUnit) => {
-                  return (
-                    <MenuItem value={TIME_UNITS[timeUnit].value}>
-                      {TIME_UNITS[timeUnit].label}
-                    </MenuItem>
-                  );
-                })}
-              </Select>
+                <Select
+                  value={recoveryDelayUnit}
+                  size="small"
+                  onChange={(e) => setRecoveryDelayUnit(e.target.value)}
+                >
+                  {Object.keys(TIME_UNITS).map((timeUnit) => {
+                    return (
+                      <MenuItem value={TIME_UNITS[timeUnit].value}>
+                        {TIME_UNITS[timeUnit].label}
+                      </MenuItem>
+                    );
+                  })}
+                </Select>
+              </Grid>
+              <Grid item xs={12}>
+                <Typography variant="body2" textAlign={"left"} color={"error"}>
+                  {recoveryDelay * TIME_UNITS[recoveryDelayUnit].multiplier <
+                  21600
+                    ? "Recovery delay must be at least 6 hours"
+                    : null}
+                </Typography>
+              </Grid>
             </Grid>
           </Grid>
         </Grid>
@@ -406,7 +418,11 @@ const GuardianSetup = () => {
             </Button>
           ) : (
             <Button
-              disabled={!guardianEmail || isBurnerWalletCreating}
+              disabled={
+                !guardianEmail ||
+                isBurnerWalletCreating ||
+                recoveryDelay * TIME_UNITS[recoveryDelayUnit].multiplier < 21600
+              }
               loading={isBurnerWalletCreating}
               onClick={async () => {
                 await connectWallet();

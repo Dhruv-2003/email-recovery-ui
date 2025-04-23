@@ -32,6 +32,7 @@ export async function run(
   safeAccount: SmartAccount<SafeSmartAccountImplementation>,
   smartAccountClient: Client<Transport, Chain, SmartAccount, RpcSchema> &
     Erc7579Actions<SmartAccount<SafeSmartAccountImplementation>>,
+  delay: number,
 ) {
   // Universal Email Recovery Module with
   // ECDSAOwnedDKIMRegistry
@@ -72,7 +73,7 @@ export async function run(
   const guardians = [guardianAddress];
   const guardianWeights = [1n];
   const threshold = 1n;
-  const delay = 6n * 60n * 60n; // 6 hours
+  // const delay = 6n * 60n * 60n; // 6 hours
   const expiry = 2n * 7n * 24n * 60n * 60n; // 2 weeks in seconds
 
   const moduleData = encodeAbiParameters(
@@ -93,7 +94,7 @@ export async function run(
       guardians,
       guardianWeights,
       threshold,
-      delay,
+      BigInt(delay),
       expiry,
     ],
   );
