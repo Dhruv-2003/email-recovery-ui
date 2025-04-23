@@ -42,7 +42,7 @@ export const pimlicoClient: PimlicoClient = createPimlicoClient({
 });
 
 export const getSafeAccount = async (
-  owner: PrivateKeyAccount
+  owner: PrivateKeyAccount,
 ): Promise<SmartAccount<SafeSmartAccountImplementation>> => {
   return await toSafeSmartAccount({
     client: publicClient,
@@ -61,7 +61,7 @@ export const getSafeAccount = async (
 };
 
 export const getSmartAccountClient = async (
-  owner: PrivateKeyAccount
+  owner: PrivateKeyAccount,
 ): Promise<
   Client<Transport, Chain, SmartAccount, RpcSchema> &
     Erc7579Actions<SmartAccount<SafeSmartAccountImplementation>>

@@ -137,7 +137,7 @@ const ConfigureGuardians = () => {
     // The account code is unique for each account.
     const guardianSalt = await relayer.getAccountSalt(
       accountCode,
-      newGuardianEmail
+      newGuardianEmail,
     );
 
     const guardianAddr = await readContract(config, {
@@ -170,7 +170,7 @@ const ConfigureGuardians = () => {
         // Add the new guardian to the array and save it back to localStorage
         localStorage.setItem(
           address,
-          JSON.stringify([...guardians, newGuardian])
+          JSON.stringify([...guardians, newGuardian]),
         );
       } catch (error) {
         console.error("Failed to parse guardians from localStorage", error);
@@ -201,9 +201,9 @@ const ConfigureGuardians = () => {
       address,
       JSON.stringify(
         guardians.filter(
-          (guardian: GuardianInfo) => guardian.guardianAddr !== guardianAddr
-        )
-      )
+          (guardian: GuardianInfo) => guardian.guardianAddr !== guardianAddr,
+        ),
+      ),
     );
     setActiveGuardianAddressRemoval("");
   };
@@ -213,7 +213,7 @@ const ConfigureGuardians = () => {
       <Box
         sx={{
           minHeight: "40rem",
-          minWidth: '50rem'
+          minWidth: "50rem",
         }}
       >
         <Grid item xs={12} textAlign={"start"}>

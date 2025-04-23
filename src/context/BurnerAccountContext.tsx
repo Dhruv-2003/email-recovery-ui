@@ -22,7 +22,7 @@ export const useBurnerAccount = () => {
   const context = useContext(BurnerAccountContext);
   if (!context) {
     throw new Error(
-      "useBurnerAccount must be used within a BurnerAccountProvider"
+      "useBurnerAccount must be used within a BurnerAccountProvider",
     );
   }
   return context;

@@ -9,12 +9,12 @@ import { safeAbi as safeAbi } from "../abi/Safe.ts";
  */
 export const getRecoveryData = (
   validator: string,
-  recoveryCalldata: string
+  recoveryCalldata: string,
 ): string => {
   const defaultAbiCoder = AbiCoder.defaultAbiCoder();
   return defaultAbiCoder.encode(
     ["address", "bytes"],
-    [validator, recoveryCalldata]
+    [validator, recoveryCalldata],
   );
 };
 
@@ -28,7 +28,7 @@ export const getRecoveryData = (
 export const getRecoveryCallData = (
   prevOwner: `0x${string}`,
   oldOwner: `0x${string}`,
-  newOwner: `0x${string}`
+  newOwner: `0x${string}`,
 ): string => {
   return encodeFunctionData({
     abi: safeAbi,
@@ -39,7 +39,7 @@ export const getRecoveryCallData = (
 
 export function getPreviousOwnerInLinkedList(
   oldOwner: `0x${string}`,
-  safeOwners: `0x${string}`[]
+  safeOwners: `0x${string}`[],
 ): `0x${string}` {
   const owners: `0x${string}`[] = safeOwners as `0x${string}`[];
   const length: number = owners.length;

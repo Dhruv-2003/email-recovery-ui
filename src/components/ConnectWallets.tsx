@@ -35,9 +35,13 @@ const ConnectWallets = () => {
                 <Button
                   variant="contained"
                   onClick={() => {
-                    toast("Please use WalletConnect to connect to the Safe account");
+                    toast(
+                      "Please use WalletConnect to connect to the Safe account",
+                    );
                     setTimeout(() => {
-                      show();
+                      if (show) {
+                        show();
+                      }
                     }, 200);
                   }}
                   endIcon={<AccountBalanceWalletOutlinedIcon />}

@@ -49,7 +49,7 @@ const RequestedRecoveries = () => {
   const [guardianEmailAddress, setGuardianEmailAddress] =
     useState(guardianEmail);
   const [buttonState, setButtonState] = useState(
-    BUTTON_STATES.TRIGGER_RECOVERY
+    BUTTON_STATES.TRIGGER_RECOVERY,
   );
 
   const [isTriggerRecoveryLoading, setIsTriggerRecoveryLoading] =
@@ -122,7 +122,7 @@ const RequestedRecoveries = () => {
 
     if (!safeOwnersData[0]) {
       toast.error(
-        "Could not find safe owner. Please check if safe is configured correctly."
+        "Could not find safe owner. Please check if safe is configured correctly.",
       );
     }
 
@@ -148,10 +148,10 @@ const RequestedRecoveries = () => {
 
     const recoveryCalldata = encodeAbiParameters(
       [{ type: "address" }, { type: "bytes" }],
-      [safeWalletAddress, swapOwnerCallData]
+      [safeWalletAddress, swapOwnerCallData],
     );
 
-    const recoveryCallDatahash = keccak256(recoveryCalldata)
+    const recoveryCallDatahash = keccak256(recoveryCalldata);
 
     try {
       // requestId
@@ -163,7 +163,7 @@ const RequestedRecoveries = () => {
           .join()
           ?.replaceAll(",", " ")
           .replace("{string}", accountHash)
-          .replace("{string}", recoveryCallDatahash)
+          .replace("{string}", recoveryCallDatahash),
       );
 
       intervalRef.current = setInterval(() => {
@@ -174,7 +174,14 @@ const RequestedRecoveries = () => {
       toast.error("Something went wrong while requesting recovery");
       setIsTriggerRecoveryLoading(false);
     }
-  }, [safeWalletAddress, guardianEmailAddress, newOwner, safeOwnersData, address, checkIfRecoveryCanBeCompleted]);
+  }, [
+    safeWalletAddress,
+    guardianEmailAddress,
+    newOwner,
+    safeOwnersData,
+    address,
+    checkIfRecoveryCanBeCompleted,
+  ]);
 
   const completeRecovery = useCallback(async () => {
     setIsCompleteRecoveryLoading(true);
@@ -190,7 +197,7 @@ const RequestedRecoveries = () => {
     });
     const completeCalldata = encodeAbiParameters(
       [{ type: "address" }, { type: "bytes" }],
-      [safeWalletAddress, swapOwnerCallData]
+      [safeWalletAddress, swapOwnerCallData],
     );
 
     try {
@@ -198,7 +205,7 @@ const RequestedRecoveries = () => {
       const res = await relayer.completeRecovery(
         safeEmailRecoveryModule as string,
         safeWalletAddress as string,
-        completeCalldata
+        completeCalldata,
       );
 
       console.debug("complete recovery data", res);

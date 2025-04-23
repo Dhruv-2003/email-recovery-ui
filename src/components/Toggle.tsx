@@ -12,7 +12,7 @@ const StyledToggleButtonGroup = styled(ToggleButtonGroup)(() => ({
   "& .MuiToggleButton-root": {
     border: "none",
     color: "#000",
-    fontSize: '16px',
+    fontSize: "16px",
     fontWeight: "semibold",
     borderRadius: "12px",
     "&.Mui-selected": {
@@ -27,12 +27,16 @@ const StyledToggleButtonGroup = styled(ToggleButtonGroup)(() => ({
   },
 }));
 
-export default function CustomizedToggleButton({ onFlowChange }) {
+export default function CustomizedToggleButton({
+  onFlowChange,
+}: {
+  onFlowChange: (newFlow: string) => void;
+}) {
   const [alignment, setAlignment] = React.useState("setup");
 
   const handleAlignment = (
-    event: React.MouseEvent<HTMLElement>,
-    newAlignment: string
+    _event: React.MouseEvent<HTMLElement>,
+    newAlignment: string,
   ) => {
     if (newAlignment !== null) {
       setAlignment(newAlignment);

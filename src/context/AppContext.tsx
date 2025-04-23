@@ -1,7 +1,7 @@
 import { createContext } from "react";
 
 type AppContextType = {
-  accountCode: `0x${string}`| null;
+  accountCode: `0x${string}` | null;
   setAccountCode: (ac: `0x${string}`) => void;
   guardianEmail: string;
   setGuardianEmail: (ge: string) => void;

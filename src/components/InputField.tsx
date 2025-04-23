@@ -27,7 +27,7 @@ const CustomTextField = styled(TextField)(
       padding: "10px 12px",
       color: "#667085",
     },
-  })
+  }),
 );
 
 interface InputFieldProps {

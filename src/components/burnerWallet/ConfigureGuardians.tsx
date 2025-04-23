@@ -123,7 +123,7 @@ const ConfigureGuardians = () => {
 
   // Since currently there is no way to get guardians, we are storing guardian related information in the localstorage
   const burnerWalletGuardians: string | null = localStorage.getItem(
-    "burnerWalletGuardians"
+    "burnerWalletGuardians",
   );
   const guardians: GuardianInfo[] = burnerWalletGuardians
     ? JSON.parse(burnerWalletGuardians)
@@ -139,7 +139,7 @@ const ConfigureGuardians = () => {
     // The account code is unique for each account.
     const guardianSalt = await relayer.getAccountSalt(
       accountCode,
-      newGuardianEmail
+      newGuardianEmail,
     );
 
     const guardianAddr = await readContract(config, {
@@ -174,7 +174,7 @@ const ConfigureGuardians = () => {
         // Add the new guardian to the array and save it back to localStorage
         localStorage.setItem(
           "burnerWalletGuardians",
-          JSON.stringify([...guardians, newGuardian])
+          JSON.stringify([...guardians, newGuardian]),
         );
       } catch (error) {
         console.error("Failed to parse guardians from localStorage", error);
@@ -205,9 +205,9 @@ const ConfigureGuardians = () => {
       "burnerWalletGuardians",
       JSON.stringify(
         guardians.filter(
-          (guardian: GuardianInfo) => guardian.guardianAddr !== guardianAddr
-        )
-      )
+          (guardian: GuardianInfo) => guardian.guardianAddr !== guardianAddr,
+        ),
+      ),
     );
     setActiveGuardianAddressRemoval("");
   };

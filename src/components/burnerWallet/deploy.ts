@@ -31,7 +31,7 @@ export async function run(
   guardianEmail: string,
   safeAccount: SmartAccount<SafeSmartAccountImplementation>,
   smartAccountClient: Client<Transport, Chain, SmartAccount, RpcSchema> &
-    Erc7579Actions<SmartAccount<SafeSmartAccountImplementation>>
+    Erc7579Actions<SmartAccount<SafeSmartAccountImplementation>>,
 ) {
   // Universal Email Recovery Module with
   // ECDSAOwnedDKIMRegistry
@@ -39,15 +39,15 @@ export async function run(
   // EmailAuth
   // EmailRecoveryCommandHandler
 
-  console.log("init run")
-  
+  console.log("init run");
+
   const guardianAddress = await computeGuardianAddress(
     safeAccount.address,
     accountCode,
-    guardianEmail
+    guardianEmail,
   );
-  console.log(guardianAddress, "guardian address")
-  
+  console.log(guardianAddress, "guardian address");
+
   const bytecode = await publicClient.getCode({
     address: safeAccount.address,
   });
@@ -62,12 +62,12 @@ export async function run(
       return;
     }
   }
-  console.log(bytecode, "byte code")
+  console.log(bytecode, "byte code");
 
   const validator = safeAccount.address;
   const isInstalledContext = toHex(0);
   const functionSelector = toFunctionSelector(
-    "swapOwner(address,address,address)"
+    "swapOwner(address,address,address)",
   );
   const guardians = [guardianAddress];
   const guardianWeights = [1n];
@@ -95,7 +95,7 @@ export async function run(
       threshold,
       delay,
       expiry,
-    ]
+    ],
   );
 
   // acceptanceSubjectTemplates -> [["Accept", "guardian", "request", "for", "{ethAddr}"]]

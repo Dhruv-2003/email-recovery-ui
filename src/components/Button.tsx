@@ -40,7 +40,7 @@ export function Button({
       case "outlined":
         return {
           color: theme.palette.text.primary, // Set text color based on filled prop
-          background: '#EBEBEB20', // Set text color based on filled prop
+          background: "#EBEBEB20", // Set text color based on filled prop
           border: "2px solid #a6a6a6",
           ":hover": {
             // backgroundColor: filled ? "#FD4BA1" : "#E0F6FF", // Background color on hover
@@ -59,7 +59,7 @@ export function Button({
 
       case "contained":
         return {
-          color: 'white', // Set text color based on filled prop
+          color: "white", // Set text color based on filled prop
           background: theme.palette.primary.main, // Set text color based on filled prop
           ":hover": {
             background: "#EA1E80", // Set text color based on filled prop

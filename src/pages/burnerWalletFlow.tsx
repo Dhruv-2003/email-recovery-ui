@@ -37,7 +37,7 @@ const BurnerWalletFlow = () => {
         const burnerWalletConfig = localStorage.getItem("burnerWalletConfig");
         if (burnerWalletConfig !== undefined && burnerWalletConfig !== null) {
           setBurnerWalletAddress(
-            JSON.parse(burnerWalletConfig)?.burnerWalletAddress
+            JSON.parse(burnerWalletConfig)?.burnerWalletAddress,
           );
           clearInterval(burnerWalletAddressPollingInterval);
         }

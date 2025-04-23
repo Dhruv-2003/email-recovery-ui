@@ -43,7 +43,7 @@ const RequestedRecoveries = () => {
   const [guardianEmailAddress, setGuardianEmailAddress] =
     useState(guardianEmail);
   const [buttonState, setButtonState] = useState(
-    BUTTON_STATES.TRIGGER_RECOVERY
+    BUTTON_STATES.TRIGGER_RECOVERY,
   );
 
   const [isTriggerRecoveryLoading, setIsTriggerRecoveryLoading] =
@@ -58,7 +58,7 @@ const RequestedRecoveries = () => {
 
   const checkIfRecoveryCanBeCompleted = useCallback(async () => {
     const safeAccount = JSON.parse(
-      localStorage.getItem("safeAccount") as string
+      localStorage.getItem("safeAccount") as string,
     );
 
     setIsRecoveryStatusLoading(true);
@@ -113,7 +113,7 @@ const RequestedRecoveries = () => {
     const owner = privateKeyToAccount(ownerPrivateKey as `0x${string}`);
 
     const safeAccount = JSON.parse(
-      localStorage.getItem("safeAccount") as string
+      localStorage.getItem("safeAccount") as string,
     );
 
     const safeOwners = await publicClient.readContract({
@@ -126,7 +126,7 @@ const RequestedRecoveries = () => {
     const oldOwner = owner.address;
     const previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
       oldOwner,
-      safeOwners
+      safeOwners,
     );
 
     // This function fetches the command template for the recoveryRequest API call. The command template will be in the following format: ['Recover', 'account', '{ethAddr}', 'using', 'recovery', 'hash', '{string}']
@@ -145,7 +145,7 @@ const RequestedRecoveries = () => {
 
     const recoveryData = encodeAbiParameters(
       parseAbiParameters("address, bytes"),
-      [safeAccount.address, recoveryCallData]
+      [safeAccount.address, recoveryCallData],
     );
 
     const templateIdx = 0;
@@ -170,7 +170,7 @@ const RequestedRecoveries = () => {
         universalEmailRecoveryModule as string,
         guardianEmailAddress,
         templateIdx,
-        processRecoveryCommand
+        processRecoveryCommand,
       );
 
       intervalRef.current = setInterval(() => {
@@ -185,7 +185,7 @@ const RequestedRecoveries = () => {
 
   const completeRecovery = useCallback(async () => {
     const safeAccount = JSON.parse(
-      localStorage.getItem("safeAccount") as string
+      localStorage.getItem("safeAccount") as string,
     );
     const ownerPrivateKey = localStorage.getItem("newOwnerPrivateKey");
     const owner = privateKeyToAccount(ownerPrivateKey as `0x${string}`);
@@ -213,10 +213,10 @@ const RequestedRecoveries = () => {
       if (block.timestamp < recoveryRequest.executeAfter) {
         const timeLeft = recoveryRequest.executeAfter - block.timestamp;
         toast.error(
-          `Recovery delay has not passed. You have ${timeLeft} seconds left.`
+          `Recovery delay has not passed. You have ${timeLeft} seconds left.`,
         );
         throw new Error(
-          `Recovery delay has not passed. You have ${timeLeft} seconds left.`
+          `Recovery delay has not passed. You have ${timeLeft} seconds left.`,
         );
       }
 
@@ -234,7 +234,7 @@ const RequestedRecoveries = () => {
       const oldOwner = owner.address;
       const previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
         oldOwner,
-        safeOwners
+        safeOwners,
       );
 
       const recoveryCallData = encodeFunctionData({
@@ -245,13 +245,13 @@ const RequestedRecoveries = () => {
 
       const recoveryData = encodeAbiParameters(
         parseAbiParameters("address, bytes"),
-        [safeAccount.address, recoveryCallData]
+        [safeAccount.address, recoveryCallData],
       );
 
       const completeRecoveryResponse = await relayer.completeRecovery(
         universalEmailRecoveryModule as string,
         safeAccount.address,
-        recoveryData
+        recoveryData,
       );
 
       if (completeRecoveryResponse.status === 200) {

@@ -9,22 +9,31 @@
   /* color-scheme: light dark; */
   color: rgba(255, 255, 255, 0.87);
   background-color: #ffbfbf;
-  background: radial-gradient(70.71% 70.71% at 50% 50%,
+  background:
+    radial-gradient(
+      70.71% 70.71% at 50% 50%,
       #fff 19%,
-      rgba(255, 255, 255, 0) 61%),
-    linear-gradient(38deg,
+      rgba(255, 255, 255, 0) 61%
+    ),
+    linear-gradient(
+      38deg,
       rgba(255, 255, 255, 0) 60%,
-      rgba(255, 255, 255, 0.69) 100%),
+      rgba(255, 255, 255, 0.69) 100%
+    ),
     linear-gradient(45deg, #fff 10%, rgba(255, 255, 255, 0) 23.5%),
     linear-gradient(36deg, #fff 12.52%, rgba(255, 255, 255, 0) 76.72%),
-    linear-gradient(214deg,
+    linear-gradient(
+      214deg,
       rgba(255, 255, 255, 0) 0%,
       rgba(255, 220, 234, 0.4) 37.53%,
-      rgba(255, 255, 255, 0) 71%),
-    linear-gradient(212deg,
+      rgba(255, 255, 255, 0) 71%
+    ),
+    linear-gradient(
+      212deg,
       rgba(255, 255, 255, 0) 15%,
       #e4f1fe 72.5%,
-      rgba(255, 255, 255, 0) 91.5%);
+      rgba(255, 255, 255, 0) 91.5%
+    );
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;

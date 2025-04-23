@@ -13,11 +13,15 @@ import SafeWalletFlow from "./pages/safeWalletFlow";
 import { Web3Provider } from "./providers/Web3Provider";
 import theme from "./theme"; // Import custom theme
 
-export const StepsContext = createContext(null);
+// eslint-disable-next-line react-refresh/only-export-components
+export const StepsContext = createContext<{
+  step: number;
+  setStep: React.Dispatch<React.SetStateAction<number>>;
+} | null>(null);
 
 function App() {
   const [step, setStep] = useState(STEPS.STEP_SELECTION);
-  
+
   return (
     <AppContextProvider>
       <ThemeProvider theme={theme}>
