@@ -24,7 +24,6 @@ import {
   entryPoint07Address,
   type SmartAccount,
 } from "viem/account-abstraction";
-import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import config from "./config.ts";
 

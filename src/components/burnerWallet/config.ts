@@ -1,4 +1,3 @@
-/* eslint-disable sort-imports */
 import dotenv from "dotenv";
 import { type Address } from "viem";
 dotenv.config();

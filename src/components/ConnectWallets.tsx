@@ -2,11 +2,11 @@ import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalance
 import { Box, Typography } from "@mui/material";
 import { ConnectKitButton } from "connectkit";
 import { useContext } from "react";
+import toast from "react-hot-toast";
 import { useAccount } from "wagmi";
 import { Button } from "./Button";
 import { StepsContext } from "../App";
 import { STEPS } from "../constants";
-import toast from "react-hot-toast";
 
 const ConnectWallets = () => {
   const { address } = useAccount();

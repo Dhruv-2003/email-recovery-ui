@@ -24,12 +24,10 @@ import infoIcon from "../../assets/infoIcon.svg";
 import { STEPS } from "../../constants";
 import { useAppContext } from "../../context/AppContextHook";
 import { useBurnerAccount } from "../../context/BurnerAccountContext";
-// import { config } from "../../providers/config";
 import { config as connectKitConfig } from "../../providers/config";
 import { relayer } from "../../services/relayer";
 import { genAccountCode, templateIdx } from "../../utils/email";
 import { TIME_UNITS } from "../../utils/recoveryDataUtils";
-import { useGetSafeAccountAddress } from "../../utils/useGetSafeAccountAddress";
 import { Button } from "../Button";
 import Loader from "../Loader";
 
@@ -40,7 +38,6 @@ const isValidEmail = (email: string) => {
 };
 
 const GuardianSetup = () => {
-  const address = useGetSafeAccountAddress();
   const { setBurnerAccountClient } = useBurnerAccount();
   const ownerPrivateKey = localStorage.getItem("newOwnerPrivateKey");
   let owner;
@@ -203,14 +200,6 @@ const GuardianSetup = () => {
       }
 
       const localStorageAccountCode = localStorage.getItem("accountCode");
-      let burnerWalletAddress;
-
-      const burnerWalletConfig = localStorage.getItem("burnerWalletConfig");
-
-      if (burnerWalletConfig) {
-        burnerWalletAddress =
-          JSON.parse(burnerWalletConfig).burnerWalletAddress;
-      }
 
       if (!localStorageAccountCode) {
         toast.error("Seomthing went wrong, please restart the flow");
@@ -276,7 +265,7 @@ const GuardianSetup = () => {
       );
       setLoading(false);
     }
-  }, [address, guardianEmail, checkIfRecoveryIsConfigured]);
+  }, [guardianEmail, checkIfRecoveryIsConfigured]);
 
   if (isAccountInitializedLoading && !loading && !isBurnerWalletCreating) {
     return <Loader />;

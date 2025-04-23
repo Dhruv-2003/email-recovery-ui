@@ -17,6 +17,7 @@ export const BurnerAccountProvider: React.FC<{ children: ReactNode }> = ({
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useBurnerAccount = () => {
   const context = useContext(BurnerAccountContext);
   if (!context) {

@@ -13,12 +13,12 @@ import { useContext, useEffect, useState } from "react";
 import { StepsContext } from "../App";
 import ConfigureGuardians from "../components/burnerWallet/ConfigureGuardians";
 import GuardianSetup from "../components/burnerWallet/GuardianSetup";
+import { generateNewAccount } from "../components/burnerWallet/helpers/generateNewAccount";
 import RequestedRecoveries from "../components/burnerWallet/RequestedRecoveries";
 import { Button } from "../components/Button";
 import WalletActions from "../components/WalletActions";
 import { STEPS } from "../constants";
 import { BurnerAccountProvider } from "../context/BurnerAccountContext";
-import { generateNewAccount } from "../components/burnerWallet/helpers/generateNewAccount";
 
 const BurnerWalletFlow = () => {
   const stepsContext = useContext(StepsContext);
@@ -52,6 +52,8 @@ const BurnerWalletFlow = () => {
         localStorage.setItem("newOwner", newAccount.address);
         localStorage.setItem("newOwnerPrivateKey", newAccount.privateKey);
       });
+    } else {
+      setOwnerAddress(localStorage.getItem("newOwner") as string);
     }
 
     const handleBeforeUnload = (event) => {
@@ -107,7 +109,7 @@ const BurnerWalletFlow = () => {
           }}
         >
           <Typography>New Owner Address: </Typography>
-          <Typography>{localStorage.getItem("newOwner")}</Typography>
+          <Typography>{ownerAddress}</Typography>
           <Tooltip title="Reset Wallet" placement="top">
             <IconButton
               onClick={async () => {

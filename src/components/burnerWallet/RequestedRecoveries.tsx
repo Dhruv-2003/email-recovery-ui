@@ -289,7 +289,7 @@ const RequestedRecoveries = () => {
     } finally {
       setIsCancelRecoveryLoading(false);
     }
-  }, [newOwner]);
+  }, [burnerAccountClient]);
 
   const getButtonComponent = () => {
     // Renders the appropriate buttons based on the button state.

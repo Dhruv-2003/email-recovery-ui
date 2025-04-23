@@ -174,13 +174,7 @@ const RequestedRecoveries = () => {
       toast.error("Something went wrong while requesting recovery");
       setIsTriggerRecoveryLoading(false);
     }
-  }, [
-    safeWalletAddress,
-    guardianEmailAddress,
-    newOwner,
-    checkIfRecoveryCanBeCompleted,
-    safeOwnersData,
-  ]);
+  }, [safeWalletAddress, guardianEmailAddress, newOwner, safeOwnersData, address, checkIfRecoveryCanBeCompleted]);
 
   const completeRecovery = useCallback(async () => {
     setIsCompleteRecoveryLoading(true);
@@ -235,7 +229,7 @@ const RequestedRecoveries = () => {
     } finally {
       setIsCancelRecoveryLoading(false);
     }
-  }, [newOwner, safeOwnersData, safeWalletAddress]);
+  }, [writeContractAsync]);
 
   const getButtonComponent = () => {
     // Renders the appropriate buttons based on the button state.
