@@ -2,7 +2,12 @@ import { Box, Grid, Typography } from "@mui/material";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { readContract } from "wagmi/actions";
+import { keccak256, parseAbiParameters } from "viem";
+import { encodeAbiParameters } from "viem";
+import { encodeFunctionData } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
+import { publicClient } from "./client";
+import { CompleteRecoveryResponseSchema } from "./types";
 import { universalEmailRecoveryModule } from "../../../contracts.base-sepolia.json";
 import { safeAbi } from "../../abi/Safe";
 import { abi as universalEmailRecoveryModuleAbi } from "../../abi/UniversalEmailRecoveryModule.json";
@@ -14,25 +19,11 @@ import { STEPS } from "../../constants";
 import { useAppContext } from "../../context/AppContextHook";
 
 import { useBurnerAccount } from "../../context/BurnerAccountContext";
-import { config } from "../../providers/config";
 import { relayer } from "../../services/relayer";
-import { templateIdx } from "../../utils/email";
 
-import {
-  getPreviousOwnerInLinkedList,
-  getRecoveryCallData,
-  getRecoveryData,
-} from "../../utils/recoveryDataUtils";
-import { useGetSafeAccountAddress } from "../../utils/useGetSafeAccountAddress";
+import { getPreviousOwnerInLinkedList } from "../../utils/recoveryDataUtils";
 import { Button } from "../Button";
 import InputField from "../InputField";
-import Loader from "../Loader";
-import { getSafeAccount, owner, publicClient } from "./client";
-import { keccak256, parseAbiParameters } from "viem";
-import { encodeAbiParameters } from "viem";
-import { encodeFunctionData } from "viem";
-import { privateKeyToAccount } from "viem/accounts";
-import { CompleteRecoveryResponseSchema } from "./types";
 
 const BUTTON_STATES = {
   TRIGGER_RECOVERY: "Trigger Recovery",
@@ -62,15 +53,13 @@ const RequestedRecoveries = () => {
   const [isCancelRecoveryLoading, setIsCancelRecoveryLoading] =
     useState<boolean>(false);
   const [isRecoveryStatusLoading, setIsRecoveryStatusLoading] = useState(false);
-  console.log(isRecoveryStatusLoading);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const checkIfRecoveryCanBeCompleted = useCallback(async () => {
-    const ownerPrivateKey = localStorage.getItem("newOwnerPrivateKey");
-    const owner = privateKeyToAccount(ownerPrivateKey as `0x${string}`);
-
-    const safeAccount = await getSafeAccount(owner);
+    const safeAccount = JSON.parse(
+      localStorage.getItem("safeAccount") as string
+    );
 
     setIsRecoveryStatusLoading(true);
     const getRecoveryRequest = await publicClient.readContract({
@@ -79,8 +68,6 @@ const RequestedRecoveries = () => {
       functionName: "getRecoveryRequest",
       args: [safeAccount.address],
     });
-
-    console.log(getRecoveryRequest);
 
     const getGuardianConfig = await publicClient.readContract({
       abi: universalEmailRecoveryModuleAbi,
@@ -113,9 +100,6 @@ const RequestedRecoveries = () => {
         background: "white",
       },
     });
-    // if (!safeWalletAddress) {
-    //   throw new Error("unable to get account address");
-    // }
 
     if (!guardianEmailAddress) {
       throw new Error("guardian email not set");
@@ -125,12 +109,12 @@ const RequestedRecoveries = () => {
       throw new Error("new owner not set");
     }
 
-    // const recoveryCallData = getRecoveryCallData(newOwner);
-
     const ownerPrivateKey = localStorage.getItem("newOwnerPrivateKey");
     const owner = privateKeyToAccount(ownerPrivateKey as `0x${string}`);
 
-    const safeAccount = await getSafeAccount(owner);
+    const safeAccount = JSON.parse(
+      localStorage.getItem("safeAccount") as string
+    );
 
     const safeOwners = await publicClient.readContract({
       abi: safeAbi,
@@ -200,10 +184,21 @@ const RequestedRecoveries = () => {
   }, [guardianEmailAddress, newOwner, checkIfRecoveryCanBeCompleted]);
 
   const completeRecovery = useCallback(async () => {
+    const safeAccount = JSON.parse(
+      localStorage.getItem("safeAccount") as string
+    );
     const ownerPrivateKey = localStorage.getItem("newOwnerPrivateKey");
     const owner = privateKeyToAccount(ownerPrivateKey as `0x${string}`);
 
-    const safeAccount = await getSafeAccount(owner);
+    const safeOwners = await publicClient.readContract({
+      abi: safeAbi,
+      address: safeAccount.address,
+      functionName: "getOwners",
+      args: [],
+    });
+
+    console.log(safeOwners, "safeOwners");
+
     setIsCompleteRecoveryLoading(true);
     try {
       const recoveryRequest = await publicClient.readContract({
@@ -213,13 +208,7 @@ const RequestedRecoveries = () => {
         args: [safeAccount.address],
       });
 
-      // const recoveryCallData = getRecoveryCallData(newOwner!);
-
       const block = await publicClient.getBlock();
-      if (recoveryRequest.executeAfter == 0n) {
-        toast.error("Recovery request for account not found");
-        throw new Error("Recovery request for account not found");
-      }
 
       if (block.timestamp < recoveryRequest.executeAfter) {
         const timeLeft = recoveryRequest.executeAfter - block.timestamp;
@@ -231,6 +220,8 @@ const RequestedRecoveries = () => {
         );
       }
 
+      console.log(safeAccount, "safeAccount");
+
       const safeOwners = await publicClient.readContract({
         abi: safeAbi,
         address: safeAccount.address,
@@ -238,12 +229,13 @@ const RequestedRecoveries = () => {
         args: [],
       });
 
+      console.log(safeOwners, "safeOwners");
+
       const oldOwner = owner.address;
       const previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
         oldOwner,
         safeOwners
       );
-      const newOwner = config.newOwner;
 
       const recoveryCallData = encodeFunctionData({
         abi: safeAbi,

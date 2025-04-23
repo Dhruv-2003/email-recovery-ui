@@ -59,7 +59,6 @@ const RequestedRecoveries = () => {
   const [isCancelRecoveryLoading, setIsCancelRecoveryLoading] =
     useState<boolean>(false);
   const [isRecoveryStatusLoading, setIsRecoveryStatusLoading] = useState(false);
-  console.log(isRecoveryStatusLoading);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -80,8 +79,6 @@ const RequestedRecoveries = () => {
       functionName: "getGuardianConfig",
       args: [address as `0x${string}`],
     });
-
-    console.log(getGuardianConfig, getRecoveryRequest);
 
     // Update the button state based on the condition. The current weight represents the number of users who have confirmed the email, and the threshold indicates the number of confirmations required before the complete recovery can be called
     if (getRecoveryRequest.currentWeight < getGuardianConfig.threshold) {
@@ -231,7 +228,6 @@ const RequestedRecoveries = () => {
         args: [],
       });
 
-      console.log("Recovery Cancelled");
       toast.success("Recovery Cancelled");
       setButtonState(BUTTON_STATES.TRIGGER_RECOVERY);
     } catch (err) {

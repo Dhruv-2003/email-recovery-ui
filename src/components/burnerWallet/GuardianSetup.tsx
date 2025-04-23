@@ -133,7 +133,7 @@ const GuardianSetup = () => {
       await localStorage.setItem("accountCode", acctCode);
       await setAccountCode(acctCode);
 
-      console.log(accountCode, acctCode, "accountCode");
+      console.log(accountCode, "accountCode");
 
       await localStorage.setItem("safeAccount", JSON.stringify(safeAccount));
       localStorage.setItem(
@@ -152,7 +152,7 @@ const GuardianSetup = () => {
         safeAccount,
         smartAccountClient
       );
-      console.log(burnerWalletAddress, "burnerwllet");
+      console.log(burnerWalletAddress, "burnerwallet");
       await localStorage.setItem(
         "burnerWalletConfig",
         JSON.stringify({ burnerWalletAddress })
@@ -233,7 +233,9 @@ const GuardianSetup = () => {
         args: [],
       });
 
-      const safeAccount = await getSafeAccount(owner);
+      const safeAccount = JSON.parse(
+        localStorage.getItem("safeAccount") as string
+      );
 
       try {
         // Attempt the API call

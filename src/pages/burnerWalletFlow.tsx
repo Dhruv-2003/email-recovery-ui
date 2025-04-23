@@ -46,11 +46,13 @@ const BurnerWalletFlow = () => {
   }, [burnerWalletAddress]);
 
   useEffect(() => {
-    generateNewAccount().then((newAccount) => {
-      setOwnerAddress(newAccount.address);
-      localStorage.setItem("newOwner", newAccount.address);
-      localStorage.setItem("newOwnerPrivateKey", newAccount.privateKey);
-    });
+    if (!localStorage.getItem("newOwner")) {
+      generateNewAccount().then((newAccount) => {
+        setOwnerAddress(newAccount.address);
+        localStorage.setItem("newOwner", newAccount.address);
+        localStorage.setItem("newOwnerPrivateKey", newAccount.privateKey);
+      });
+    }
 
     const handleBeforeUnload = (event) => {
       // Standard across browsers (Chrome, Firefox, etc.)

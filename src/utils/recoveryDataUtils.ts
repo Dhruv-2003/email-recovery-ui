@@ -54,7 +54,7 @@ export function getPreviousOwnerInLinkedList(
 
   const sentinelOwner: `0x${string}` =
     "0x0000000000000000000000000000000000000001";
-  return oldOwnerIndex === 0 ? sentinelOwner : owners[oldOwnerIndex - 1];
+  return oldOwnerIndex <= 0 ? sentinelOwner : owners[oldOwnerIndex - 1];
 }
 
 // TIME_UNITS is an object that defines various time units.
