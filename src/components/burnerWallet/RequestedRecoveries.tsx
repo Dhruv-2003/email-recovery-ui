@@ -33,15 +33,19 @@ const BUTTON_STATES = {
   RECOVERY_COMPLETED: "Recovery Completed",
 };
 
-const CompleteRecoveryTime = () => {
-  const [timeLeftToCompleteRecovery, setTimeLeftToCompleteRecovery] =
-    useState<number>(0);
+const CompleteRecoveryTime = ({
+  timeLeftRef,
+}: {
+  timeLeftRef: React.RefObject<number>;
+}) => {
+  // Local state only for display purposes in this component
+  const [displayTime, setDisplayTime] = useState<number>(0);
 
   useEffect(() => {
     const checkTimeLeft = async () => {
       try {
         const safeAccount = JSON.parse(
-          localStorage.getItem("safeAccount") as string
+          localStorage.getItem("safeAccount") as string,
         );
 
         const recoveryRequest = await publicClient.readContract({
@@ -58,11 +62,18 @@ const CompleteRecoveryTime = () => {
           timeLeft =
             Number(recoveryRequest.executeAfter) - Number(block.timestamp);
         }
-        
+
         if (timeLeft > 0) {
-          setTimeLeftToCompleteRecovery(timeLeft);
+          // Update both the ref (for parent) and local state (for display)
+          if (timeLeftRef.current !== undefined) {
+            timeLeftRef.current = timeLeft;
+          }
+          setDisplayTime(timeLeft);
         } else {
-          setTimeLeftToCompleteRecovery(0);
+          if (timeLeftRef.current !== undefined) {
+            timeLeftRef.current = 0;
+          }
+          setDisplayTime(0);
         }
       } catch (error) {
         console.error("Error checking time left:", error);
@@ -71,25 +82,30 @@ const CompleteRecoveryTime = () => {
 
     // Initial check
     checkTimeLeft();
-    
-    // Set up the countdown interval separately from data fetching
+
+    // Set up the countdown interval
     const intervalId = setInterval(() => {
-      setTimeLeftToCompleteRecovery((prev) => {
-        // Only decrement if greater than 0
-        return prev > 0 ? prev - 1 : 0;
+      setDisplayTime((prev) => {
+        const newValue = prev > 0 ? prev - 1 : 0;
+        // Update the ref for parent access without causing parent re-render
+        if (timeLeftRef.current !== undefined) {
+          // @ts-expect-error we know that timeLeftRef.current is a number
+          timeLeftRef.current = newValue;
+        }
+        return newValue;
       });
     }, 1000);
-    
+
     // Cleanup function to clear the interval when component unmounts
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, []); // Empty dependency array - only run on mount
+  }, [timeLeftRef]); // Empty dependency array - only run on mount
 
   return (
     <Typography variant="h6" sx={{ paddingBottom: "3.125rem" }}>
-      You can recover your account in {timeLeftToCompleteRecovery} seconds. This
-      delay is a security feature to help protect your account.
+      You can recover your account in {displayTime} seconds. This delay is a
+      security feature to help protect your account.
     </Typography>
   );
 };
@@ -105,7 +121,7 @@ const RequestedRecoveries = () => {
   const [guardianEmailAddress, setGuardianEmailAddress] =
     useState(guardianEmail);
   const [buttonState, setButtonState] = useState(
-    BUTTON_STATES.TRIGGER_RECOVERY
+    BUTTON_STATES.TRIGGER_RECOVERY,
   );
 
   const [isTriggerRecoveryLoading, setIsTriggerRecoveryLoading] =
@@ -118,9 +134,12 @@ const RequestedRecoveries = () => {
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Use a ref instead of state to avoid re-renders in the parent
+  const timeLeftToCompleteRecoveryRef = useRef<number>(0);
+
   const checkIfRecoveryCanBeCompleted = useCallback(async () => {
     const safeAccount = JSON.parse(
-      localStorage.getItem("safeAccount") as string
+      localStorage.getItem("safeAccount") as string,
     );
 
     setIsRecoveryStatusLoading(true);
@@ -175,7 +194,7 @@ const RequestedRecoveries = () => {
     const owner = privateKeyToAccount(ownerPrivateKey as `0x${string}`);
 
     const safeAccount = JSON.parse(
-      localStorage.getItem("safeAccount") as string
+      localStorage.getItem("safeAccount") as string,
     );
 
     const safeOwners = await publicClient.readContract({
@@ -188,7 +207,7 @@ const RequestedRecoveries = () => {
     const oldOwner = owner.address;
     const previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
       oldOwner,
-      safeOwners
+      safeOwners,
     );
 
     const recoveryCallData = encodeFunctionData({
@@ -199,7 +218,7 @@ const RequestedRecoveries = () => {
 
     const recoveryData = encodeAbiParameters(
       parseAbiParameters("address, bytes"),
-      [safeAccount.address, recoveryCallData]
+      [safeAccount.address, recoveryCallData],
     );
 
     const templateIdx = 0;
@@ -224,7 +243,7 @@ const RequestedRecoveries = () => {
         universalEmailRecoveryModule as string,
         guardianEmailAddress,
         templateIdx,
-        processRecoveryCommand
+        processRecoveryCommand,
       );
 
       intervalRef.current = setInterval(() => {
@@ -239,7 +258,7 @@ const RequestedRecoveries = () => {
 
   const completeRecovery = useCallback(async () => {
     const safeAccount = JSON.parse(
-      localStorage.getItem("safeAccount") as string
+      localStorage.getItem("safeAccount") as string,
     );
     const ownerPrivateKey = localStorage.getItem("newOwnerPrivateKey");
     const owner = privateKeyToAccount(ownerPrivateKey as `0x${string}`);
@@ -255,23 +274,15 @@ const RequestedRecoveries = () => {
 
     setIsCompleteRecoveryLoading(true);
     try {
-      // if (timeLeftToCompleteRecovery > 0) {
-      //   throw new Error("Recovery delay has not passed");
-      // }
-
-      const safeOwners = await publicClient.readContract({
-        abi: safeAbi,
-        address: safeAccount.address,
-        functionName: "getOwners",
-        args: [],
-      });
-
-      console.log(safeOwners, "safeOwners");
+      // Access the current ref value
+      if (timeLeftToCompleteRecoveryRef.current > 0) {
+        throw new Error("Recovery delay has not passed");
+      }
 
       const oldOwner = owner.address;
       const previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
         oldOwner,
-        safeOwners
+        safeOwners,
       );
 
       const recoveryCallData = encodeFunctionData({
@@ -282,13 +293,13 @@ const RequestedRecoveries = () => {
 
       const recoveryData = encodeAbiParameters(
         parseAbiParameters("address, bytes"),
-        [safeAccount.address, recoveryCallData]
+        [safeAccount.address, recoveryCallData],
       );
 
       const completeRecoveryResponse = await relayer.completeRecovery(
         universalEmailRecoveryModule as string,
         safeAccount.address,
-        recoveryData
+        recoveryData,
       );
 
       if (completeRecoveryResponse.status === 200) {
@@ -304,7 +315,7 @@ const RequestedRecoveries = () => {
     } finally {
       setIsCompleteRecoveryLoading(false);
     }
-  }, [newOwner]);
+  }, [newOwner]); // No need to have the time value in the dependency array
 
   const handleCancelRecovery = useCallback(async () => {
     setIsCancelRecoveryLoading(true);
@@ -345,7 +356,7 @@ const RequestedRecoveries = () => {
         return (
           <Button
             loading={isCompleteRecoveryLoading}
-            disabled={!newOwner}
+            disabled={!newOwner || timeLeftToCompleteRecoveryRef.current > 0}
             variant="contained"
             onClick={completeRecovery}
             endIcon={<img src={completeRecoveryIcon} />}
@@ -404,7 +415,7 @@ const RequestedRecoveries = () => {
             transfer to
           </Typography>
           {buttonState === BUTTON_STATES.COMPLETE_RECOVERY ? (
-            <CompleteRecoveryTime />
+            <CompleteRecoveryTime timeLeftRef={timeLeftToCompleteRecoveryRef} />
           ) : null}
         </>
       )}

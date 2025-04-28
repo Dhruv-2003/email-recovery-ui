@@ -32,14 +32,14 @@ export async function run(
   safeAccount: SmartAccount<SafeSmartAccountImplementation>,
   smartAccountClient: Client<Transport, Chain, SmartAccount, RpcSchema> &
     Erc7579Actions<SmartAccount<SafeSmartAccountImplementation>>,
-  delay: number
+  delay: number,
 ) {
   console.log("init run");
 
   const guardianAddress = await computeGuardianAddress(
     safeAccount.address,
     accountCode,
-    guardianEmail
+    guardianEmail,
   );
   console.log(guardianAddress, "guardian address");
 
@@ -62,7 +62,7 @@ export async function run(
   const validator = safeAccount.address;
   const isInstalledContext = toHex(0);
   const functionSelector = toFunctionSelector(
-    "swapOwner(address,address,address)"
+    "swapOwner(address,address,address)",
   );
   const guardians = [guardianAddress];
   const guardianWeights = [1n];
@@ -89,7 +89,7 @@ export async function run(
       threshold,
       BigInt(delay),
       expiry,
-    ]
+    ],
   );
 
   // acceptanceSubjectTemplates -> [["Accept", "guardian", "request", "for", "{ethAddr}"]]
