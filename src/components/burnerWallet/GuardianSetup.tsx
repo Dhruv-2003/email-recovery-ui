@@ -15,7 +15,6 @@ import { privateKeyToAccount } from "viem/accounts";
 import { readContract } from "wagmi/actions";
 import { getSafeAccount, publicClient } from "./client";
 import { getSmartAccountClient } from "./client";
-import config from "./config";
 import { run } from "./deploy";
 import { universalEmailRecoveryModule } from "../../../contracts.base-sepolia.json";
 import { abi as universalEmailRecoveryModuleAbi } from "../../abi/UniversalEmailRecoveryModule.json";
@@ -215,7 +214,7 @@ const GuardianSetup = () => {
       // This function fetches the command template for the acceptanceRequest API call. The command template will be in the following format: [['Accept', "guardian", "request", "for", "{ethAddr}"]]
       const subject = await publicClient.readContract({
         abi: universalEmailRecoveryModuleAbi,
-        address: config.addresses.universalEmailRecoveryModule,
+        address: universalEmailRecoveryModule as `0x${string}`,
         functionName: "acceptanceCommandTemplates",
         args: [],
       });
@@ -374,7 +373,6 @@ const GuardianSetup = () => {
                     21600
                   }
                   title="Recovery Delay"
-                  // helperText="This is the delay you the actual wallet owner has to cancel recovery after recovery has been initiated, helpful for preventing malicious behavior from guardians."
                 />
 
                 <Select

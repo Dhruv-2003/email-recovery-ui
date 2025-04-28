@@ -26,6 +26,11 @@ import {
 } from "viem/account-abstraction";
 import { baseSepolia } from "viem/chains";
 import config from "./config.ts";
+import {
+  attestor,
+  erc7569LaunchpadAddress,
+  safe4337ModuleAddress,
+} from "../../../contracts.base-sepolia.json";
 
 export const publicClient = createPublicClient({
   transport: http(config.rpcUrl),
@@ -42,7 +47,7 @@ export const pimlicoClient: PimlicoClient = createPimlicoClient({
 });
 
 export const getSafeAccount = async (
-  owner: PrivateKeyAccount,
+  owner: PrivateKeyAccount
 ): Promise<SmartAccount<SafeSmartAccountImplementation>> => {
   return await toSafeSmartAccount({
     client: publicClient,
@@ -52,16 +57,16 @@ export const getSafeAccount = async (
       address: entryPoint07Address,
       version: "0.7",
     },
-    safe4337ModuleAddress: config.addresses.safe4337ModuleAddress,
-    erc7579LaunchpadAddress: config.addresses.erc7569LaunchpadAddress,
-    attesters: [config.addresses.attestor],
+    safe4337ModuleAddress: safe4337ModuleAddress as `0x${string}`,
+    erc7579LaunchpadAddress: erc7569LaunchpadAddress as `0x${string}`,
+    attesters: [attestor as `0x${string}`],
     attestersThreshold: 1,
     saltNonce: config.saltNonce,
   });
 };
 
 export const getSmartAccountClient = async (
-  owner: PrivateKeyAccount,
+  owner: PrivateKeyAccount
 ): Promise<
   Client<Transport, Chain, SmartAccount, RpcSchema> &
     Erc7579Actions<SmartAccount<SafeSmartAccountImplementation>>

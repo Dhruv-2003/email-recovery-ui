@@ -12,8 +12,8 @@ import {
 } from "viem";
 import { SmartAccount } from "viem/account-abstraction";
 import { publicClient } from "./client";
-import config from "./config";
 import { computeGuardianAddress } from "./helpers/computeGuardianAddress";
+import { universalEmailRecoveryModule } from "../../../contracts.base-sepolia.json";
 
 /**
  * Executes a series of operations to configure a smart account, including transferring Ether,
@@ -32,20 +32,14 @@ export async function run(
   safeAccount: SmartAccount<SafeSmartAccountImplementation>,
   smartAccountClient: Client<Transport, Chain, SmartAccount, RpcSchema> &
     Erc7579Actions<SmartAccount<SafeSmartAccountImplementation>>,
-  delay: number,
+  delay: number
 ) {
-  // Universal Email Recovery Module with
-  // ECDSAOwnedDKIMRegistry
-  // Verifier
-  // EmailAuth
-  // EmailRecoveryCommandHandler
-
   console.log("init run");
 
   const guardianAddress = await computeGuardianAddress(
     safeAccount.address,
     accountCode,
-    guardianEmail,
+    guardianEmail
   );
   console.log(guardianAddress, "guardian address");
 
@@ -54,7 +48,7 @@ export async function run(
   });
   if (bytecode) {
     const isModuleInstalled = await smartAccountClient.isModuleInstalled({
-      address: config.addresses.universalEmailRecoveryModule,
+      address: universalEmailRecoveryModule,
       type: "executor",
       context: toHex(0),
     });
@@ -68,12 +62,11 @@ export async function run(
   const validator = safeAccount.address;
   const isInstalledContext = toHex(0);
   const functionSelector = toFunctionSelector(
-    "swapOwner(address,address,address)",
+    "swapOwner(address,address,address)"
   );
   const guardians = [guardianAddress];
   const guardianWeights = [1n];
   const threshold = 1n;
-  // const delay = 6n * 60n * 60n; // 6 hours
   const expiry = 2n * 7n * 24n * 60n * 60n; // 2 weeks in seconds
 
   const moduleData = encodeAbiParameters(
@@ -96,14 +89,14 @@ export async function run(
       threshold,
       BigInt(delay),
       expiry,
-    ],
+    ]
   );
 
   // acceptanceSubjectTemplates -> [["Accept", "guardian", "request", "for", "{ethAddr}"]]
   // recoverySubjectTemplates -> [["Recover", "account", "{ethAddr}", "using", "recovery", "hash", "{string}"]]
   const userOpHash = await smartAccountClient.installModule({
     type: "executor",
-    address: config.addresses.universalEmailRecoveryModule,
+    address: universalEmailRecoveryModule as `0x${string}`,
     context: moduleData,
     account: safeAccount,
   });

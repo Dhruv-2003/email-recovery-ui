@@ -35,13 +35,6 @@ const LandingPage = () => {
         toast("Please disconnect previously created wallet");
         return navigate("/safe-wallet");
       case "BURNER_WALLET":
-        toast("Please disconnect previously created wallet");
-        if (!!window?.ethereum?.isMetaMask === false) {
-          toast.error(
-            "It appears that the Metamask extension is not installed. To ensure the website functions correctly, please install Metamask before proceeding.",
-            { duration: 5000000 },
-          );
-        }
         return navigate("/burner-wallet");
       case "WALLET_RECOVERY":
         return navigate("/wallet-recovery");
@@ -53,35 +46,6 @@ const LandingPage = () => {
   return (
     <div className="bg-white h-full">
       <Grid sx={{ marginBottom: "auto" }}>
-        {/* <Link to="https://prove.email/" target="_blank">
-          <Box
-            display="flex"
-            alignItems="center"
-            sx={{
-              borderRadius: "25.95px",
-              border: "1px solid #CECFD2",
-              width: "160px",
-              marginX: "auto",
-              marginBottom: "20px",
-              backgroundColor: "#ffffff",
-            }}
-          >
-            <DraftsOutlinedIcon
-              sx={{
-                marginLeft: "15px",
-                marginRight: "9px",
-                padding: "4px",
-                color: "#000000",
-                fontSize: "18px",
-              }}
-            />
-            <Typography
-              sx={{ fontSize: "12px", fontWeight: 700, textAlign: "left" }}
-            >
-              ZKEmail Tech
-            </Typography>
-          </Box>
-        </Link> */}
         <Typography variant="h1">Email Recovery Demo</Typography>
         <Typography
           sx={{

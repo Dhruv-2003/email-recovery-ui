@@ -24,12 +24,74 @@ import { relayer } from "../../services/relayer";
 import { getPreviousOwnerInLinkedList } from "../../utils/recoveryDataUtils";
 import { Button } from "../Button";
 import InputField from "../InputField";
+import Loader from "../Loader";
 
 const BUTTON_STATES = {
   TRIGGER_RECOVERY: "Trigger Recovery",
   CANCEL_RECOVERY: "Cancel Recovery",
   COMPLETE_RECOVERY: "Complete Recovery",
   RECOVERY_COMPLETED: "Recovery Completed",
+};
+
+const CompleteRecoveryTime = () => {
+  const [timeLeftToCompleteRecovery, setTimeLeftToCompleteRecovery] =
+    useState<number>(0);
+
+  useEffect(() => {
+    const checkTimeLeft = async () => {
+      try {
+        const safeAccount = JSON.parse(
+          localStorage.getItem("safeAccount") as string
+        );
+
+        const recoveryRequest = await publicClient.readContract({
+          abi: universalEmailRecoveryModuleAbi,
+          address: universalEmailRecoveryModule as `0x${string}`,
+          functionName: "getRecoveryRequest",
+          args: [safeAccount.address],
+        });
+
+        const block = await publicClient.getBlock();
+        let timeLeft = 0;
+
+        if (block.timestamp < recoveryRequest.executeAfter) {
+          timeLeft =
+            Number(recoveryRequest.executeAfter) - Number(block.timestamp);
+        }
+        
+        if (timeLeft > 0) {
+          setTimeLeftToCompleteRecovery(timeLeft);
+        } else {
+          setTimeLeftToCompleteRecovery(0);
+        }
+      } catch (error) {
+        console.error("Error checking time left:", error);
+      }
+    };
+
+    // Initial check
+    checkTimeLeft();
+    
+    // Set up the countdown interval separately from data fetching
+    const intervalId = setInterval(() => {
+      setTimeLeftToCompleteRecovery((prev) => {
+        // Only decrement if greater than 0
+        return prev > 0 ? prev - 1 : 0;
+      });
+    }, 1000);
+    
+    // Cleanup function to clear the interval when component unmounts
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, []); // Empty dependency array - only run on mount
+
+  return (
+    <Typography variant="h6" sx={{ paddingBottom: "3.125rem" }}>
+      You can recover your account in {timeLeftToCompleteRecovery} seconds. This
+      delay is a security feature to help protect your account.
+    </Typography>
+  );
 };
 
 const RequestedRecoveries = () => {
@@ -43,7 +105,7 @@ const RequestedRecoveries = () => {
   const [guardianEmailAddress, setGuardianEmailAddress] =
     useState(guardianEmail);
   const [buttonState, setButtonState] = useState(
-    BUTTON_STATES.TRIGGER_RECOVERY,
+    BUTTON_STATES.TRIGGER_RECOVERY
   );
 
   const [isTriggerRecoveryLoading, setIsTriggerRecoveryLoading] =
@@ -58,7 +120,7 @@ const RequestedRecoveries = () => {
 
   const checkIfRecoveryCanBeCompleted = useCallback(async () => {
     const safeAccount = JSON.parse(
-      localStorage.getItem("safeAccount") as string,
+      localStorage.getItem("safeAccount") as string
     );
 
     setIsRecoveryStatusLoading(true);
@@ -83,7 +145,7 @@ const RequestedRecoveries = () => {
       setButtonState(BUTTON_STATES.TRIGGER_RECOVERY);
     } else {
       setButtonState(BUTTON_STATES.COMPLETE_RECOVERY);
-      clearInterval(intervalRef.current);
+      clearInterval(intervalRef.current as NodeJS.Timeout);
     }
     setIsRecoveryStatusLoading(false);
   }, [intervalRef]);
@@ -113,7 +175,7 @@ const RequestedRecoveries = () => {
     const owner = privateKeyToAccount(ownerPrivateKey as `0x${string}`);
 
     const safeAccount = JSON.parse(
-      localStorage.getItem("safeAccount") as string,
+      localStorage.getItem("safeAccount") as string
     );
 
     const safeOwners = await publicClient.readContract({
@@ -126,16 +188,8 @@ const RequestedRecoveries = () => {
     const oldOwner = owner.address;
     const previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
       oldOwner,
-      safeOwners,
+      safeOwners
     );
-
-    // This function fetches the command template for the recoveryRequest API call. The command template will be in the following format: ['Recover', 'account', '{ethAddr}', 'using', 'recovery', 'hash', '{string}']
-    // const command = (await readContract(config, {
-    //   abi: universalEmailRecoveryModuleAbi,
-    //   address: universalEmailRecoveryModule as `0x${string}`,
-    //   functionName: "recoveryCommandTemplates",
-    //   args: [],
-    // })) as [][];
 
     const recoveryCallData = encodeFunctionData({
       abi: safeAbi,
@@ -145,7 +199,7 @@ const RequestedRecoveries = () => {
 
     const recoveryData = encodeAbiParameters(
       parseAbiParameters("address, bytes"),
-      [safeAccount.address, recoveryCallData],
+      [safeAccount.address, recoveryCallData]
     );
 
     const templateIdx = 0;
@@ -170,7 +224,7 @@ const RequestedRecoveries = () => {
         universalEmailRecoveryModule as string,
         guardianEmailAddress,
         templateIdx,
-        processRecoveryCommand,
+        processRecoveryCommand
       );
 
       intervalRef.current = setInterval(() => {
@@ -185,7 +239,7 @@ const RequestedRecoveries = () => {
 
   const completeRecovery = useCallback(async () => {
     const safeAccount = JSON.parse(
-      localStorage.getItem("safeAccount") as string,
+      localStorage.getItem("safeAccount") as string
     );
     const ownerPrivateKey = localStorage.getItem("newOwnerPrivateKey");
     const owner = privateKeyToAccount(ownerPrivateKey as `0x${string}`);
@@ -201,26 +255,9 @@ const RequestedRecoveries = () => {
 
     setIsCompleteRecoveryLoading(true);
     try {
-      const recoveryRequest = await publicClient.readContract({
-        abi: universalEmailRecoveryModuleAbi,
-        address: universalEmailRecoveryModule as `0x${string}`,
-        functionName: "getRecoveryRequest",
-        args: [safeAccount.address],
-      });
-
-      const block = await publicClient.getBlock();
-
-      if (block.timestamp < recoveryRequest.executeAfter) {
-        const timeLeft = recoveryRequest.executeAfter - block.timestamp;
-        toast.error(
-          `Recovery delay has not passed. You have ${timeLeft} seconds left.`,
-        );
-        throw new Error(
-          `Recovery delay has not passed. You have ${timeLeft} seconds left.`,
-        );
-      }
-
-      console.log(safeAccount, "safeAccount");
+      // if (timeLeftToCompleteRecovery > 0) {
+      //   throw new Error("Recovery delay has not passed");
+      // }
 
       const safeOwners = await publicClient.readContract({
         abi: safeAbi,
@@ -234,7 +271,7 @@ const RequestedRecoveries = () => {
       const oldOwner = owner.address;
       const previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
         oldOwner,
-        safeOwners,
+        safeOwners
       );
 
       const recoveryCallData = encodeFunctionData({
@@ -245,13 +282,13 @@ const RequestedRecoveries = () => {
 
       const recoveryData = encodeAbiParameters(
         parseAbiParameters("address, bytes"),
-        [safeAccount.address, recoveryCallData],
+        [safeAccount.address, recoveryCallData]
       );
 
       const completeRecoveryResponse = await relayer.completeRecovery(
         universalEmailRecoveryModule as string,
         safeAccount.address,
-        recoveryData,
+        recoveryData
       );
 
       if (completeRecoveryResponse.status === 200) {
@@ -325,17 +362,15 @@ const RequestedRecoveries = () => {
     }
   };
 
-  console.log(isRecoveryStatusLoading);
-
-  // // Since we are polling for every actions but only wants to show full screen loader for the initial request
-  // if (
-  //   isRecoveryStatusLoading &&
-  //   !isTriggerRecoveryLoading &&
-  //   !isCompleteRecoveryLoading &&
-  //   !isCancelRecoveryLoading
-  // ) {
-  //   return <Loader />;
-  // }
+  // Since we are polling for every actions but only wants to show full screen loader for the initial request
+  if (
+    isRecoveryStatusLoading &&
+    !isTriggerRecoveryLoading &&
+    !isCompleteRecoveryLoading &&
+    !isCancelRecoveryLoading
+  ) {
+    return <Loader />;
+  }
 
   return (
     <Box>
@@ -368,6 +403,9 @@ const RequestedRecoveries = () => {
             Enter your guardian email address and the new wallet you want to
             transfer to
           </Typography>
+          {buttonState === BUTTON_STATES.COMPLETE_RECOVERY ? (
+            <CompleteRecoveryTime />
+          ) : null}
         </>
       )}
 
