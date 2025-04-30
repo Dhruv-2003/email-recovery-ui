@@ -1,15 +1,17 @@
-import { useNavigate } from "react-router-dom";
-import { useTheme, Grid, Typography, Box } from "@mui/material";
-import "../App.css";
-import DraftsOutlinedIcon from "@mui/icons-material/DraftsOutlined";
-import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
-import SvgWrapper from "../components/SvgIconWrapper";
-import gnosisSafeLogo from "../assets/gnosis-safe-logo.svg";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
-import Toggle from "../components/Toggle";
+import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
+import { Grid, Typography, useTheme } from "@mui/material";
+import { useContext, useState } from "react";
+import toast from "react-hot-toast";
+import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
-import { useState } from "react";
+import "../App.css";
+import { StepsContext } from "../App";
+import gnosisSafeLogo from "../assets/gnosis-safe-logo.svg";
 import FlowInfoCard from "../components/FlowsInfoCard";
+import SvgWrapper from "../components/SvgIconWrapper";
+import Toggle from "../components/Toggle";
+import { STEPS } from "../constants";
 
 type actionType = "SAFE_WALLET" | "BURNER_WALLET" | "WALLET_RECOVERY";
 type FlowType = "setup" | "recover";
@@ -17,6 +19,7 @@ type FlowType = "setup" | "recover";
 const LandingPage = () => {
   const theme = useTheme();
   const [flow, setFlow] = useState<FlowType>("setup");
+  const stepsContext = useContext(StepsContext);
 
   const navigate = useNavigate();
 
@@ -25,8 +28,11 @@ const LandingPage = () => {
   };
 
   const handleClick = async (action: actionType) => {
+    await stepsContext?.setStep(STEPS.CONNECT_WALLETS);
+
     switch (action) {
       case "SAFE_WALLET":
+        toast("Please disconnect previously created wallet");
         return navigate("/safe-wallet");
       case "BURNER_WALLET":
         return navigate("/burner-wallet");
@@ -38,40 +44,9 @@ const LandingPage = () => {
   };
 
   return (
-    <div className="bg-white">
-      <Grid sx={{ paddingTop: { xs: "5rem", md: "7.5rem" } }}>
-        <Link to="https://prove.email/" target="_blank">
-          <Box
-            display="flex"
-            alignItems="center"
-            sx={{
-              borderRadius: "25.95px",
-              border: "1px solid #CECFD2",
-              width: "160px",
-              marginX: "auto",
-              marginBottom: "20px",
-              backgroundColor: "#ffffff",
-            }}
-          >
-            <DraftsOutlinedIcon
-              sx={{
-                marginLeft: "15px",
-                marginRight: "9px",
-                padding: "4px",
-                color: "#000000",
-                fontSize: "18px",
-              }}
-            />
-            <Typography
-              sx={{ fontSize: "12px", fontWeight: 700, textAlign: "left" }}
-            >
-              ZKEmail Tech
-            </Typography>
-          </Box>
-        </Link>
-        <Typography variant="h1" sx={{ color: theme.palette.primary.main }}>
-          Email Recovery Demo
-        </Typography>
+    <div className="bg-white h-full">
+      <Grid sx={{ marginBottom: "auto" }}>
+        <Typography variant="h1">Email Recovery Demo</Typography>
         <Typography
           sx={{
             color: theme.palette.secondary.main,
@@ -99,7 +74,7 @@ const LandingPage = () => {
               }
               buttonText={"Safe Wallet Flow"}
               handleButtonClick={() => handleClick("SAFE_WALLET")}
-              title={" Gnosis Safe"}
+              title={"Safe"}
               description={"Copy the link and import into your Safe wallet"}
               infoIconTitle={"Gnosis Safe Wallet Recovery Setup"}
               infoIconDescription={
@@ -118,10 +93,11 @@ const LandingPage = () => {
                 />
               }
               buttonText={"Burner Safe Flow (v1.4.1)"}
-              isButtonDisabled={true}
               handleButtonClick={() => handleClick("BURNER_WALLET")}
-              title={" Test Wallet"}
-              description={"Connect to see the test wallet flow"}
+              title={"Test Wallet"}
+              description={
+                "A burner wallet is a temporary crypto wallet for quick, low-value transactions, ideal for short-term use, events, or testing, with minimal security."
+              }
               infoIconTitle={"Test Wallet Recovery Setup"}
               infoIconDescription={
                 "Test out our setup and recovery flow with a test wallet."
