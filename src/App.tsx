@@ -12,6 +12,7 @@ import RecoverWalletFlow from "./pages/recoverWalletFlow";
 import SafeWalletFlow from "./pages/safeWalletFlow";
 import { Web3Provider } from "./providers/Web3Provider";
 import theme from "./theme"; // Import custom theme
+import EOA7702SafeFlow from "./pages/EOA7702SafeFlow";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const StepsContext = createContext<{
@@ -47,6 +48,10 @@ function App() {
                   <Route
                     path="/wallet-recovery"
                     element={<RecoverWalletFlow />}
+                  />
+                  <Route
+                    path="/7702-eoa-wallet"
+                    element={<EOA7702SafeFlow />}
                   />
                   <Route path="*" element={<ErrorPage />} />
                 </Routes>
