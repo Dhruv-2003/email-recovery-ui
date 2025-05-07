@@ -1,7 +1,15 @@
 import React, { createContext, ReactNode, useContext, useState } from "react";
 import "viem/window";
 
-const BurnerAccountContext = createContext(null);
+type BurnerAccountContextType = {
+  burnerAccountClient: any;
+  setBurnerAccountClient: (accountClient: any) => void;
+};
+
+const BurnerAccountContext = createContext<BurnerAccountContextType>({
+  burnerAccountClient: null,
+  setBurnerAccountClient: () => {},
+});
 
 export const BurnerAccountProvider: React.FC<{ children: ReactNode }> = ({
   children,
@@ -22,7 +30,7 @@ export const useBurnerAccount = () => {
   const context = useContext(BurnerAccountContext);
   if (!context) {
     throw new Error(
-      "useBurnerAccount must be used within a BurnerAccountProvider",
+      "useBurnerAccount must be used within a BurnerAccountProvider"
     );
   }
   return context;

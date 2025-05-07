@@ -57,14 +57,14 @@ const GuardianSetup = () => {
   const [isWalletPresent, setIsWalletPresent] = useState(false);
   const [emailError, setEmailError] = useState(false);
   const [recoveryDelayUnit, setRecoveryDelayUnit] = useState(
-    TIME_UNITS.HOURS.value,
+    TIME_UNITS.HOURS.value
   );
   const [isBurnerWalletCreating, setIsBurnerWalletCreating] = useState(false);
 
   // A new account code must be created for each session to enable the creation of a new wallet, and it will be used throughout the demo flow
 
   const initialSaltNonce = BigInt(
-    localStorage.getItem("saltNonce") || Math.floor(Math.random() * 100000),
+    localStorage.getItem("saltNonce") || Math.floor(Math.random() * 100000)
   );
   const [saltNonce, setSaltNonce] = useState<bigint>(initialSaltNonce);
 
@@ -131,7 +131,7 @@ const GuardianSetup = () => {
       await localStorage.setItem("safeAccount", JSON.stringify(safeAccount));
       localStorage.setItem(
         "smartAccountClient",
-        JSON.stringify(smartAccountClient),
+        JSON.stringify(smartAccountClient)
       );
 
       console.log(safeAccount, "safeaccount");
@@ -144,12 +144,12 @@ const GuardianSetup = () => {
         guardianEmail,
         safeAccount,
         smartAccountClient,
-        recoveryDelay * TIME_UNITS[recoveryDelayUnit].multiplier,
+        recoveryDelay * TIME_UNITS[recoveryDelayUnit].multiplier
       );
       console.log(burnerWalletAddress, "burnerwallet");
       await localStorage.setItem(
         "burnerWalletConfig",
-        JSON.stringify({ burnerWalletAddress }),
+        JSON.stringify({ burnerWalletAddress })
       );
 
       console.log(burnerWalletAddress, "burnerwalletddress");
@@ -220,7 +220,7 @@ const GuardianSetup = () => {
       });
 
       const safeAccount = JSON.parse(
-        localStorage.getItem("safeAccount") as string,
+        localStorage.getItem("safeAccount") as string
       );
 
       try {
@@ -233,7 +233,7 @@ const GuardianSetup = () => {
           subject[0]
             .join()
             .replaceAll(",", " ")
-            .replace("{ethAddr}", safeAccount.address),
+            .replace("{ethAddr}", safeAccount.address)
         );
       } catch (error) {
         // retry mechanism as this API call fails for the first time
@@ -247,7 +247,7 @@ const GuardianSetup = () => {
           subject[0]
             .join()
             .replaceAll(",", " ")
-            .replace("{ethAddr}", safeAccount.address),
+            .replace("{ethAddr}", safeAccount.address)
         );
       }
 
@@ -258,7 +258,7 @@ const GuardianSetup = () => {
     } catch (err) {
       console.error(err);
       toast.error(
-        err?.shortMessage ?? "Something went wrong, please try again.",
+        err?.shortMessage ?? "Something went wrong, please try again."
       );
       setLoading(false);
     }
@@ -365,7 +365,7 @@ const GuardianSetup = () => {
                   value={recoveryDelay}
                   onChange={(e) =>
                     setRecoveryDelay(
-                      parseInt((e.target as HTMLInputElement).value),
+                      parseInt((e.target as HTMLInputElement).value)
                     )
                   }
                   error={
