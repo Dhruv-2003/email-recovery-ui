@@ -323,7 +323,7 @@ const RequestedRecoveries = () => {
     } finally {
       setIsCompleteRecoveryLoading(false);
     }
-  }, [newOwner]); // No need to have the time value in the dependency array
+  }, [newOwner]);
 
   const handleCancelRecovery = useCallback(async () => {
     setIsCancelRecoveryLoading(true);
