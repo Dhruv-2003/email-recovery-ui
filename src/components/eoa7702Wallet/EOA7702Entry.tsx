@@ -23,7 +23,6 @@ import { ConnectKitButton } from "connectkit";
 const EOA7702Entry = () => {
   const [ownerPasskeyCredential, setOwnerPasskeyCredential] =
     useState<P256Credential>();
-  // const [burnerAccount, setBurnerAccount] = useState<PrivateKeyAccount>(); // Can change to whatever type account will be
 
   const account = useAccount();
   const { data: walletClient } = useWalletClient();
@@ -33,9 +32,9 @@ const EOA7702Entry = () => {
 
   const [isAccountInitializedLoading, setIsAccountInitializedLoading] =
     useState(false);
-  // const [isOwnerPasskeyPresent, setIsOwnerPasskeyPresent] = useState(false);
   const [isBurnerWalletUpgrading, setIsBurnerWalletUpgrading] = useState(false);
   const [isCodeSet, setIsCodeSet] = useState<boolean>(false);
+  // const [isOwnerPasskeyPresent, setIsOwnerPasskeyPresent] = useState(false);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 

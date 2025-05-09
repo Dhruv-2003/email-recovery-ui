@@ -31,17 +31,7 @@ import { useWalletClient } from "wagmi";
 import { PrivateKeyAccount } from "viem";
 import { run } from "../burnerWallet/deploy";
 import { ConnectKitButton } from "connectkit";
-
-// Define types for contract call results
-interface GuardianConfig {
-  guardianHash: `0x${string}`; // Assuming type based on typical usage
-  threshold: bigint;
-  acceptedWeight: bigint;
-  recoveryConfiguredAt: bigint;
-}
-
-// Assuming acceptanceCommandTemplates returns an array of string arrays
-type AcceptanceCommandTemplatesResult = string[][];
+import { GuardianConfig, AcceptanceCommandTemplatesResult } from "./types";
 
 //logic for valid email address check for input
 const isValidEmail = (email: string) => {
@@ -64,7 +54,7 @@ const GuardianSetup = () => {
   const [recoveryDelay, setRecoveryDelay] = useState(6);
   const [emailError, setEmailError] = useState(false);
   const [recoveryDelayUnit, setRecoveryDelayUnit] = useState<
-    keyof typeof TIME_UNITS // Typed for proper indexing
+    keyof typeof TIME_UNITS
   >(TIME_UNITS.HOURS.value as keyof typeof TIME_UNITS); // Ensure initial value is a valid key
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -89,7 +79,7 @@ const GuardianSetup = () => {
       address: universalEmailRecoveryModule as `0x${string}`,
       functionName: "getGuardianConfig",
       args: [burnerWalletAddress],
-    })) as GuardianConfig; // Cast to defined type
+    })) as GuardianConfig;
 
     console.log(getGuardianConfig, "getGuardianConfig");
 
@@ -112,8 +102,8 @@ const GuardianSetup = () => {
       toast.error(
         "Account setup not complete. Please go back and set up your account."
       );
-      stepsContext?.setStep(STEPS.CONNECT_WALLETS); // Or a more specific previous step if available
-      return; // Prevent further execution in this effect
+      stepsContext?.setStep(STEPS.CONNECT_WALLETS);
+      return;
     }
 
     // Clean up the interval on component unmount
@@ -252,7 +242,7 @@ const GuardianSetup = () => {
     burnerAccountClient,
     burnerAccount,
     owner,
-    setAccountCode, // Removed accountCode, using acctCode from genAccountCode()
+    setAccountCode,
     recoveryDelay,
     recoveryDelayUnit,
   ]);
@@ -378,7 +368,7 @@ const GuardianSetup = () => {
                   }
                 >
                   {Object.keys(TIME_UNITS).map((timeUnitKey) => {
-                    const timeUnit = timeUnitKey as keyof typeof TIME_UNITS; // Cast string key
+                    const timeUnit = timeUnitKey as keyof typeof TIME_UNITS;
                     return (
                       <MenuItem
                         key={timeUnit}
@@ -410,8 +400,8 @@ const GuardianSetup = () => {
             <Button
               disabled={
                 !guardianEmail ||
-                loading || // Simplified disabled condition
-                emailError || // Added emailError to disabled condition
+                loading ||
+                emailError ||
                 recoveryDelay * TIME_UNITS[recoveryDelayUnit].multiplier < 21600
               }
               loading={loading}
