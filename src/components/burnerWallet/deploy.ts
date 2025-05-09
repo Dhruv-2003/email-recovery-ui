@@ -11,7 +11,7 @@ import {
   Transport,
 } from "viem";
 import { SmartAccount } from "viem/account-abstraction";
-import { publicClient } from "./client";
+import { publicClient, pimlicoClient } from "./client";
 import { computeGuardianAddress } from "./helpers/computeGuardianAddress";
 import { universalEmailRecoveryModule } from "../../../contracts.base-sepolia.json";
 
@@ -32,14 +32,14 @@ export async function run(
   safeAccount: SmartAccount<SafeSmartAccountImplementation>,
   smartAccountClient: Client<Transport, Chain, SmartAccount, RpcSchema> &
     Erc7579Actions<SmartAccount<SafeSmartAccountImplementation>>,
-  delay: number,
+  delay: number
 ) {
   console.log("init run");
 
   const guardianAddress = await computeGuardianAddress(
     safeAccount.address,
     accountCode,
-    guardianEmail,
+    guardianEmail
   );
   console.log(guardianAddress, "guardian address");
 
@@ -48,13 +48,15 @@ export async function run(
   });
   if (bytecode) {
     const isModuleInstalled = await smartAccountClient.isModuleInstalled({
-      address: universalEmailRecoveryModule,
+      address: universalEmailRecoveryModule as `0x${string}`,
       type: "executor",
       context: toHex(0),
     });
     if (isModuleInstalled) {
       console.log("Module already installed");
       return;
+    } else {
+      console.log("Module not installed");
     }
   }
   console.log(bytecode, "byte code");
@@ -62,7 +64,7 @@ export async function run(
   const validator = safeAccount.address;
   const isInstalledContext = toHex(0);
   const functionSelector = toFunctionSelector(
-    "swapOwner(address,address,address)",
+    "swapOwner(address,address,address)"
   );
   const guardians = [guardianAddress];
   const guardianWeights = [1n];
@@ -89,7 +91,7 @@ export async function run(
       threshold,
       BigInt(delay),
       expiry,
-    ],
+    ]
   );
 
   // acceptanceSubjectTemplates -> [["Accept", "guardian", "request", "for", "{ethAddr}"]]
@@ -101,4 +103,10 @@ export async function run(
     account: safeAccount,
   });
   console.log("opHash", userOpHash);
+
+  await pimlicoClient.waitForUserOperationReceipt({
+    hash: userOpHash,
+  });
+
+  return userOpHash;
 }

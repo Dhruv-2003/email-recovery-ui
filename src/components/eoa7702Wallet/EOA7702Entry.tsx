@@ -23,11 +23,12 @@ import { ConnectKitButton } from "connectkit";
 const EOA7702Entry = () => {
   const [ownerPasskeyCredential, setOwnerPasskeyCredential] =
     useState<P256Credential>();
-  const [burnerAccount, setBurnerAccount] = useState<PrivateKeyAccount>(); // Can change to whatever type account will be
+  // const [burnerAccount, setBurnerAccount] = useState<PrivateKeyAccount>(); // Can change to whatever type account will be
 
   const account = useAccount();
   const { data: walletClient } = useWalletClient();
-  const { setBurnerAccountClient } = useBurnerAccount();
+  const { setBurnerAccountClient, burnerAccount, setBurnerAccount } =
+    useBurnerAccount();
   const stepsContext = useContext(StepsContext);
 
   const [isAccountInitializedLoading, setIsAccountInitializedLoading] =
@@ -74,6 +75,13 @@ const EOA7702Entry = () => {
         });
 
         if (code !== "0x" && code !== undefined) {
+          const burnerWalletClient = createWalletClient({
+            account: burnerAccount,
+            chain: baseSepolia,
+            transport: http(),
+          });
+
+          setBurnerAccountClient(burnerWalletClient);
           setIsCodeSet(true);
           stepsContext?.setStep(STEPS.REQUEST_GUARDIAN);
         }
@@ -101,7 +109,7 @@ const EOA7702Entry = () => {
         clearInterval(intervalRef.current);
       }
     };
-  }, []);
+  }, [walletClient]);
 
   const createPassKeyAccount = async (): Promise<P256Credential> => {
     if (ownerPasskeyCredential) {
@@ -245,6 +253,7 @@ const EOA7702Entry = () => {
               : "N/A"}
             ) will be set as an owner.
           </Typography>
+
           <Button
             disabled={isBurnerWalletUpgrading || !burnerAccount}
             loading={isBurnerWalletUpgrading}

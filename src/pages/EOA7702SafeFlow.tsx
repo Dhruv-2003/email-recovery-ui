@@ -1,5 +1,6 @@
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import {
+  Box,
   Dialog,
   DialogActions,
   DialogContent,
@@ -12,20 +13,19 @@ import {
 import { useContext, useEffect, useState } from "react";
 import { StepsContext } from "../App";
 import ConfigureGuardians from "../components/burnerWallet/ConfigureGuardians";
-import GuardianSetup from "../components/burnerWallet/GuardianSetup";
+import GuardianSetup from "../components/eoa7702Wallet/GuardianSetup";
 import { generateNewAccount } from "../components/burnerWallet/helpers/generateNewAccount";
-import RequestedRecoveries from "../components/burnerWallet/RequestedRecoveries";
+import RequestedRecoveries from "../components/eoa7702Wallet/RequestedRecoveries";
 import { Button } from "../components/Button";
 import WalletActions from "../components/WalletActions";
 import { STEPS } from "../constants";
 import { BurnerAccountProvider } from "../context/BurnerAccountContext";
 import EOA7702Entry from "../components/eoa7702Wallet/EOA7702Entry";
+import { useAccount } from "wagmi";
+import { ConnectKitButton } from "connectkit";
 
 const EOA7702SafeFlow = () => {
   const stepsContext = useContext(StepsContext);
-
-  const [ownerAddress, setOwnerAddress] = useState<string | null>(null);
-
   const [burnerEOAWalletAddress, setBurnerEOAWalletAddress] = useState<
     string | null
   >();
@@ -33,6 +33,8 @@ const EOA7702SafeFlow = () => {
     isResetBurnerWalletConfirmationModalOpen,
     setIsResetBurnerWalletConfirmationModalOpen,
   ] = useState(false);
+
+  const owner = useAccount();
 
   useEffect(() => {
     if (!burnerEOAWalletAddress) {
@@ -68,7 +70,7 @@ const EOA7702SafeFlow = () => {
       );
     }
 
-    const handleBeforeUnload = (event) => {
+    const handleBeforeUnload = (event: any) => {
       // Standard across browsers (Chrome, Firefox, etc.)
       event.preventDefault();
       event.returnValue = ""; // Required for Chrome to show the alert
@@ -96,8 +98,8 @@ const EOA7702SafeFlow = () => {
       case STEPS.REQUEST_GUARDIAN:
         return <GuardianSetup />;
 
-      case STEPS.CONFIGURE_GUARDIANS:
-        return <ConfigureGuardians />;
+      // case STEPS.CONFIGURE_GUARDIANS:
+      //   return <ConfigureGuardians />;
 
       // Step to set up the guardian email
       case STEPS.WALLET_ACTIONS:
@@ -115,29 +117,16 @@ const EOA7702SafeFlow = () => {
   return (
     <BurnerAccountProvider>
       <div className="app">
-        {ownerAddress && (
-          <div
-            style={{
+        {owner && (
+          <Box
+            sx={{
               display: "flex",
               justifyContent: "center",
-              alignItems: "center",
-              gap: "4px",
-              marginBottom: "16px",
+              paddingBottom: "2rem",
             }}
           >
-            <Typography>Owner Address: </Typography>
-            <Typography>{ownerAddress}</Typography>
-            <Tooltip title="Reset Wallet" placement="top">
-              <IconButton
-                onClick={async () => {
-                  localStorage.clear();
-                  window.location.reload();
-                }}
-              >
-                <RestartAltIcon />
-              </IconButton>
-            </Tooltip>
-          </div>
+            <ConnectKitButton />
+          </Box>
         )}
 
         {burnerEOAWalletAddress && (
