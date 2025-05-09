@@ -4,11 +4,15 @@ import "viem/window";
 type BurnerAccountContextType = {
   burnerAccountClient: any;
   setBurnerAccountClient: (accountClient: any) => void;
+  burnerAccount: any; // For PrivateKeyAccounts
+  setBurnerAccount: (account: any) => void;
 };
 
 const BurnerAccountContext = createContext<BurnerAccountContextType>({
   burnerAccountClient: null,
   setBurnerAccountClient: () => {},
+  burnerAccount: null,
+  setBurnerAccount: () => {},
 });
 
 export const BurnerAccountProvider: React.FC<{ children: ReactNode }> = ({
@@ -16,9 +20,16 @@ export const BurnerAccountProvider: React.FC<{ children: ReactNode }> = ({
 }) => {
   const [burnerAccountClient, setBurnerAccountClient] = useState(null); // Adjust type as needed
 
+  const [burnerAccount, setBurnerAccount] = useState(null); // Adjust type as needed
+
   return (
     <BurnerAccountContext.Provider
-      value={{ burnerAccountClient, setBurnerAccountClient }}
+      value={{
+        burnerAccountClient,
+        setBurnerAccountClient,
+        burnerAccount,
+        setBurnerAccount,
+      }}
     >
       {children}
     </BurnerAccountContext.Provider>
