@@ -220,15 +220,6 @@ const EOA7702Entry = () => {
             as an owner for your enhanced EOA, allowing it to be upgraded to a
             smart account.
           </Typography>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              paddingBottom: "2rem",
-            }}
-          >
-            <ConnectKitButton />
-          </Box>
         </>
       ) : !isCodeSet ? (
         <>
