@@ -2,10 +2,10 @@ import { Box, Grid, Typography } from "@mui/material";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
-import { keccak256, parseAbiParameters } from "viem";
+import { keccak256, parseAbiParameters, PrivateKeyAccount } from "viem";
 import { encodeAbiParameters } from "viem";
 import { encodeFunctionData } from "viem";
-import { publicClient } from "./client";
+import { getSmartAccountClient, publicClient } from "./client";
 import { CompleteRecoveryResponseSchema } from "../burnerWallet/types";
 import { universalEmailRecoveryModule } from "../../../contracts.base-sepolia.json";
 import { safeAbi } from "../../abi/Safe";
@@ -112,7 +112,7 @@ const CompleteRecoveryTime = ({
 const RequestedRecoveries = () => {
   const { guardianEmail } = useAppContext();
   const navigate = useNavigate();
-  const { burnerAccountClient } = useBurnerAccount();
+  const { burnerAccountClient, burnerAccount } = useBurnerAccount();
   const stepsContext = useContext(StepsContext);
 
   const { data: owner } = useWalletClient();
@@ -263,11 +263,17 @@ const RequestedRecoveries = () => {
       localStorage.getItem("safeAccount") as string
     );
 
+    // check safeAccount
+
+    console.log(owner);
+
     if (!owner?.account) {
+      toast.error("owner not connected");
       throw new Error("owner not connected");
     }
 
     if (!newOwner) {
+      toast.error("new owner not set");
       throw new Error("new owner not set");
     }
 
@@ -328,8 +334,25 @@ const RequestedRecoveries = () => {
   const handleCancelRecovery = useCallback(async () => {
     setIsCancelRecoveryLoading(true);
     setIsTriggerRecoveryLoading(false);
+    console.log(burnerAccountClient);
+
+    if (!owner || !owner.account) {
+      toast.error("owner not connected");
+      throw new Error("owner not connected");
+    }
+
+    if (!burnerAccount) {
+      console.log("burner account not found");
+      stepsContext?.setStep(STEPS.CONNECT_WALLETS);
+    }
+
     try {
-      await burnerAccountClient.writeContract({
+      const burnerAccountSmartClient = await getSmartAccountClient(
+        owner,
+        burnerAccount as PrivateKeyAccount
+      );
+
+      await burnerAccountSmartClient.writeContract({
         abi: universalEmailRecoveryModuleAbi,
         address: universalEmailRecoveryModule as `0x${string}`,
         functionName: "cancelRecovery",
@@ -345,7 +368,7 @@ const RequestedRecoveries = () => {
     } finally {
       setIsCancelRecoveryLoading(false);
     }
-  }, [burnerAccountClient]);
+  }, [owner]);
 
   const getButtonComponent = () => {
     // Renders the appropriate buttons based on the button state.

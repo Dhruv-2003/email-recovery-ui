@@ -30,7 +30,6 @@ import Loader from "../Loader";
 import { useWalletClient } from "wagmi";
 import { PrivateKeyAccount } from "viem";
 import { run } from "../burnerWallet/deploy";
-import { ConnectKitButton } from "connectkit";
 import { GuardianConfig, AcceptanceCommandTemplatesResult } from "./types";
 
 //logic for valid email address check for input
@@ -99,9 +98,6 @@ const GuardianSetup = () => {
 
     // If burnerAccountClient (from previous EOA7702 step) is not ready, redirect.
     if (!burnerAccountClient) {
-      toast.error(
-        "Account setup not complete. Please go back and set up your account."
-      );
       stepsContext?.setStep(STEPS.CONNECT_WALLETS);
       return;
     }
@@ -413,15 +409,9 @@ const GuardianSetup = () => {
                 : "Configure Recovery & Request Guardian"}
             </Button>
           ) : (
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "center",
-                paddingBottom: "2rem",
-              }}
-            >
-              <ConnectKitButton />
-            </Box>
+            <Typography sx={{ paddingBottom: "1.5rem" }}>
+              Wallet Not connected
+            </Typography>
           )}
         </Grid>
       </Grid>
