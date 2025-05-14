@@ -1,4 +1,5 @@
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import LaunchIcon from "@mui/icons-material/Launch";
 import {
   Box,
   Dialog,
@@ -12,7 +13,6 @@ import {
 } from "@mui/material";
 import { useContext, useEffect, useState } from "react";
 import { StepsContext } from "../App";
-import ConfigureGuardians from "../components/burnerWallet/ConfigureGuardians";
 import GuardianSetup from "../components/eoa7702Wallet/GuardianSetup";
 import { generateNewAccount } from "../components/burnerWallet/helpers/generateNewAccount";
 import RequestedRecoveries from "../components/eoa7702Wallet/RequestedRecoveries";
@@ -22,7 +22,6 @@ import { STEPS } from "../constants";
 import { BurnerAccountProvider } from "../context/BurnerAccountContext";
 import EOA7702Entry from "../components/eoa7702Wallet/EOA7702Entry";
 import { useAccount } from "wagmi";
-import { ConnectKitButton } from "connectkit";
 
 const EOA7702SafeFlow = () => {
   const stepsContext = useContext(StepsContext);
@@ -98,9 +97,6 @@ const EOA7702SafeFlow = () => {
       case STEPS.REQUEST_GUARDIAN:
         return <GuardianSetup />;
 
-      // case STEPS.CONFIGURE_GUARDIANS:
-      //   return <ConfigureGuardians />;
-
       // Step to set up the guardian email
       case STEPS.WALLET_ACTIONS:
         return <WalletActions />;
@@ -125,7 +121,8 @@ const EOA7702SafeFlow = () => {
               paddingBottom: "2rem",
             }}
           >
-            <ConnectKitButton />
+            {/* The appkit button is a web component (global html), don't require importing*/}
+            <appkit-button />
           </Box>
         )}
 
@@ -138,20 +135,37 @@ const EOA7702SafeFlow = () => {
               gap: "4px",
             }}
           >
-            <Typography>Burner Wallet Address: </Typography>
-            <a
-              href={`https://app.safe.global/home?safe=basesep%3A${burnerEOAWalletAddress}`}
-              target="_blank"
+            <Tooltip
+              title="This is your Smart EOA, upgraded using EIP-7702. It combines the simplicity of an EOA with smart contract capabilities like transaction batching, session keys, and enhanced security features, all controlled by your primary signer."
+              placement="top"
             >
-              {burnerEOAWalletAddress}
-            </a>
+              <Typography sx={{ display: "flex", alignItems: "center" }}>
+                Smart EOA (burner):{" "}
+                <a
+                  href={`https://scope.sh/84532/address/${burnerEOAWalletAddress}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    textDecoration: "none",
+                    // color: "inherit",
+                  }}
+                >
+                  {burnerEOAWalletAddress}
+                  <LaunchIcon sx={{ marginLeft: "4px", fontSize: "1rem" }} />
+                </a>
+              </Typography>
+            </Tooltip>
+
             <Tooltip title="Reset Wallet" placement="top">
               <IconButton
                 onClick={async () => {
                   setIsResetBurnerWalletConfirmationModalOpen(true);
                 }}
+                sx={{ padding: "4px" }}
               >
-                <RestartAltIcon />
+                <RestartAltIcon sx={{ fontSize: "1.2rem" }} />
               </IconButton>
             </Tooltip>
           </div>

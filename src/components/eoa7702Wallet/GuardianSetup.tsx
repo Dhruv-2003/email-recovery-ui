@@ -21,7 +21,7 @@ import infoIcon from "../../assets/infoIcon.svg";
 import { STEPS } from "../../constants";
 import { useAppContext } from "../../context/AppContextHook";
 import { useBurnerAccount } from "../../context/BurnerAccountContext";
-import { config as connectKitConfig } from "../../providers/config";
+import { config as appKitConfig } from "../../providers/config";
 import { relayer } from "../../services/relayer";
 import { genAccountCode, templateIdx } from "../../utils/email";
 import { TIME_UNITS } from "../../utils/recoveryDataUtils";
@@ -58,6 +58,8 @@ const GuardianSetup = () => {
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  console.log(owner);
+
   const checkIfRecoveryIsConfigured = useCallback(async () => {
     let burnerWalletAddress;
     const safeAccount = localStorage.getItem("safeAccount");
@@ -73,7 +75,7 @@ const GuardianSetup = () => {
     console.log(burnerWalletAddress, "burnerWalletAddress");
 
     setIsAccountInitializedLoading(true);
-    const getGuardianConfig = (await readContract(connectKitConfig, {
+    const getGuardianConfig = (await readContract(appKitConfig, {
       abi: universalEmailRecoveryModuleAbi,
       address: universalEmailRecoveryModule as `0x${string}`,
       functionName: "getGuardianConfig",
@@ -228,7 +230,7 @@ const GuardianSetup = () => {
       toast.error(
         err?.shortMessage ||
           err?.message ||
-          "Something went wrong, please try again."
+          "Something went wrong while configuring guardians, please try again."
       );
       setLoading(false);
     }

@@ -24,7 +24,7 @@ import { getPreviousOwnerInLinkedList } from "../../utils/recoveryDataUtils";
 import { Button } from "../Button";
 import InputField from "../InputField";
 import Loader from "../Loader";
-import { useWalletClient } from "wagmi";
+import { useAccount, useWalletClient } from "wagmi";
 
 const BUTTON_STATES = {
   TRIGGER_RECOVERY: "Trigger Recovery",
@@ -116,6 +116,7 @@ const RequestedRecoveries = () => {
   const stepsContext = useContext(StepsContext);
 
   const { data: owner } = useWalletClient();
+  const ownerAccount = useAccount();
 
   const [newOwner, setNewOwner] = useState<`0x${string}`>();
 
@@ -251,9 +252,13 @@ const RequestedRecoveries = () => {
       intervalRef.current = setInterval(() => {
         checkIfRecoveryCanBeCompleted();
       }, 5000);
-    } catch (error) {
-      console.log(error);
-      toast.error("Something went wrong while requesting recovery");
+    } catch (err: any) {
+      console.error("Error in requestRecovery:", err);
+      toast.error(
+        err?.shortMessage ||
+          err?.message ||
+          "Something went wrong while creating recovery request, please try again."
+      );
       setIsTriggerRecoveryLoading(false);
     }
   }, [guardianEmailAddress, newOwner, checkIfRecoveryCanBeCompleted]);
@@ -263,11 +268,7 @@ const RequestedRecoveries = () => {
       localStorage.getItem("safeAccount") as string
     );
 
-    // check safeAccount
-
-    console.log(owner);
-
-    if (!owner?.account) {
+    if (!owner?.account && !ownerAccount) {
       toast.error("owner not connected");
       throw new Error("owner not connected");
     }
@@ -293,7 +294,7 @@ const RequestedRecoveries = () => {
         throw new Error("Recovery delay has not passed");
       }
 
-      const oldOwner = owner.account.address;
+      const oldOwner = owner.account.address || ownerAccount.address;
       const previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
         oldOwner,
         safeOwners as `0x${string}`[]
@@ -323,9 +324,13 @@ const RequestedRecoveries = () => {
       }
 
       setButtonState(BUTTON_STATES.RECOVERY_COMPLETED);
-    } catch (err) {
-      console.log(err);
-      toast.error("Something went wrong while completing recovery process");
+    } catch (err: any) {
+      console.error("Error in completeRecovery:", err);
+      toast.error(
+        err?.shortMessage ||
+          err?.message ||
+          "Something went wrong while completing recovery, please try again."
+      );
     } finally {
       setIsCompleteRecoveryLoading(false);
     }
@@ -362,9 +367,13 @@ const RequestedRecoveries = () => {
       setButtonState(BUTTON_STATES.TRIGGER_RECOVERY);
       toast.success("Recovery Cancelled");
       console.log("Recovery Cancelled");
-    } catch (err) {
-      console.log(err);
-      toast.error("Something went wrong while completing recovery process");
+    } catch (err: any) {
+      console.error("Error in cancelRecovery:", err);
+      toast.error(
+        err?.shortMessage ||
+          err?.message ||
+          "Something went wrong while cancelling recovery request, please try again."
+      );
     } finally {
       setIsCancelRecoveryLoading(false);
     }

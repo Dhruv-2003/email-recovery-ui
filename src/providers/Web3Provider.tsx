@@ -1,25 +1,28 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ConnectKitProvider } from "connectkit";
 import { ReactNode } from "react";
 import { WagmiProvider } from "wagmi";
-import { config } from "./config";
+import { appKitWagmiAdapter, appKitMetadata, projectId } from "./config";
+import { createAppKit } from "@reown/appkit";
+import { baseSepolia } from "@reown/appkit/networks";
 
-const connectKitOptions = {
-  walletConnectName: "WalletConnect",
-  hideNoWalletCTA: true,
-};
+createAppKit({
+  adapters: [appKitWagmiAdapter],
+  networks: [baseSepolia],
+  projectId,
+  metadata: appKitMetadata,
+  features: {
+    analytics: false,
+    email: false,
+  },
+  themeMode: "dark",
+});
 
 const queryClient = new QueryClient();
 
 export const Web3Provider = ({ children }: { children: ReactNode }) => {
-  console.log(config, "config");
   return (
-    <WagmiProvider config={config}>
-      <QueryClientProvider client={queryClient}>
-        <ConnectKitProvider options={connectKitOptions}>
-          {children}
-        </ConnectKitProvider>
-      </QueryClientProvider>
+    <WagmiProvider config={appKitWagmiAdapter.wagmiConfig}>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     </WagmiProvider>
   );
 };
