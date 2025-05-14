@@ -18,7 +18,6 @@ import { createWalletClient, http, PrivateKeyAccount } from "viem";
 import { useAccount, useWalletClient } from "wagmi";
 import { baseSepolia } from "viem/chains";
 import { upgradeEOAWith7702 } from "./auth";
-import { ConnectKitButton } from "connectkit";
 
 const EOA7702Entry = () => {
   const [ownerPasskeyCredential, setOwnerPasskeyCredential] =
@@ -26,6 +25,10 @@ const EOA7702Entry = () => {
 
   const account = useAccount();
   const { data: walletClient } = useWalletClient();
+
+  console.log(account);
+  console.log(walletClient);
+
   const { setBurnerAccountClient, burnerAccount, setBurnerAccount } =
     useBurnerAccount();
   const stepsContext = useContext(StepsContext);
@@ -38,6 +41,7 @@ const EOA7702Entry = () => {
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
+  // TODO: Passkey logic is disabled for now
   // Check if the primary passkey credenital is already present
   // useEffect(() => {
   //   const ownerPasskeyCredential = localStorage.getItem(
@@ -110,6 +114,7 @@ const EOA7702Entry = () => {
     };
   }, [walletClient]);
 
+  // TODO: Passkey logic is disabled for now
   const createPassKeyAccount = async (): Promise<P256Credential> => {
     if (ownerPasskeyCredential) {
       console.log("Passkey already created");
@@ -164,6 +169,8 @@ const EOA7702Entry = () => {
     });
     setBurnerAccountClient(burnerWalletClient);
 
+    console.log(burnerAccount);
+
     try {
       const safeAccount = await getSafeAccount(owner, burnerAccount);
       const smartAccountClient = await getSmartAccountClient(
@@ -216,9 +223,11 @@ const EOA7702Entry = () => {
             variant="body1"
             sx={{ paddingBottom: "2rem", color: "text.secondary" }}
           >
-            To begin, please connect your primary wallet. This wallet will act
-            as an owner for your enhanced EOA, allowing it to be upgraded to a
-            smart account.
+            To begin, please connect your primary signer. This wallet will act
+            as a controller for your Smart EOA, upgraded using 7702. It combines
+            the simplicity of an EOA with smart contract capabilities like
+            transaction batching, session keys, and enhanced security features,
+            all controlled by your primary signer.
           </Typography>
         </>
       ) : !isCodeSet ? (
