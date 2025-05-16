@@ -18,7 +18,11 @@ import {
 } from "../../../contracts.base-sepolia.json";
 import { safeAbi } from "../../abi/Safe";
 
-import { relayClient } from "./client.ts";
+if (!import.meta.env.VITE_7702_RELAYER_URL) {
+  throw new Error("VITE_7702_RELAYER_URL does not exist");
+}
+
+const realyer_7702_url = import.meta.env.VITE_7702_RELAYER_URL;
 
 export async function upgradeEOAWith7702(
   burner: WalletClient,
@@ -43,8 +47,7 @@ export async function upgradeEOAWith7702(
   const paymentValue = 0n;
   const paymentReceiver = zeroAddress;
 
-  const txHash = await relayClient.writeContract({
-    address: burner.account!.address,
+  const data = encodeFunctionData({
     abi: safeAbi,
     functionName: "setup",
     args: [
@@ -57,8 +60,42 @@ export async function upgradeEOAWith7702(
       paymentValue,
       paymentReceiver,
     ],
-    authorizationList: [authorization],
   });
+
+  const relay_req = {
+    to: burner.account!.address,
+    data,
+    authorization: {
+      address: authorization.address,
+      chainId: authorization.chainId,
+      nonce: authorization.nonce,
+      r: authorization.r,
+      s: authorization.s,
+      v: Number(authorization.v),
+      yParity: authorization.yParity,
+    },
+  };
+
+  // Call the relayer
+  const res = await fetch(`${realyer_7702_url}api/relay/delegate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(relay_req),
+  });
+
+  if (!res.ok) {
+    const errorData = await res
+      .json()
+      .catch(() => ({ message: res.statusText }));
+    console.error("Error from relay delegate:", errorData);
+    throw new Error(
+      errorData.message || `Request failed with status ${res.status}`
+    );
+  }
+
+  const { txHash } = await res.json();
 
   console.log("EIP 7702 upgrde and setup tx Hash", txHash);
 

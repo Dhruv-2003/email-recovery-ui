@@ -17,6 +17,7 @@ import infoIcon from "../../assets/infoIcon.svg";
 import { STEPS } from "../../constants";
 import { useAppContext } from "../../context/AppContextHook";
 
+import { TIME_UNITS } from "../../utils/recoveryDataUtils";
 import { useBurnerAccount } from "../../context/BurnerAccountContext";
 import { relayer } from "../../services/relayer";
 
@@ -40,6 +41,7 @@ const CompleteRecoveryTime = ({
 }) => {
   // Local state only for display purposes in this component
   const [displayTime, setDisplayTime] = useState<number>(0);
+  const [display, setDisplay] = useState<string>("0 Secs");
 
   useEffect(() => {
     const checkTimeLeft = async () => {
@@ -101,10 +103,57 @@ const CompleteRecoveryTime = ({
     };
   }, [timeLeftRef]); // Empty dependency array - only run on mount
 
+  const convertDisplayTime = (timeLeftInSeconds: number): string => {
+    if (timeLeftInSeconds <= 0) {
+      return "0 Secs";
+    }
+
+    const parts: string[] = [];
+    let remainingSeconds = timeLeftInSeconds;
+
+    const unitsInOrder = [
+      TIME_UNITS.DAYS,
+      TIME_UNITS.HOURS,
+      TIME_UNITS.MINS,
+      TIME_UNITS.SECS,
+    ];
+
+    for (const unit of unitsInOrder) {
+      if (unit.multiplier === 0) continue;
+      if (remainingSeconds >= unit.multiplier) {
+        const count = Math.floor(remainingSeconds / unit.multiplier);
+        parts.push(
+          `${count} ${unit.label}${count > 1 && unit.label.endsWith("s") ? "" : count > 1 && !unit.label.endsWith("s") ? "s" : ""}`
+        );
+        remainingSeconds %= unit.multiplier;
+      }
+    }
+    if (parts.length === 0 && remainingSeconds > 0) {
+      parts.push(`${remainingSeconds} Secs`);
+    } else if (parts.length === 0 && timeLeftInSeconds > 0) {
+      return `${timeLeftInSeconds} Secs`;
+    }
+
+    if (parts.length === 0) {
+      return "0 Secs";
+    }
+
+    if (parts.length === 1) {
+      return parts[0];
+    }
+
+    const lastPart = parts.pop() as string;
+    return `${parts.join(", ")} and ${lastPart}`;
+  };
+
+  useEffect(() => {
+    setDisplay(convertDisplayTime(displayTime));
+  }, [displayTime]);
+
   return (
     <Typography variant="h6" sx={{ paddingBottom: "3.125rem" }}>
-      You can recover your account in {displayTime} seconds. This delay is a
-      security feature to help protect your account.
+      You can recover your account in {display}. This delay is a security
+      feature to help protect your account.
     </Typography>
   );
 };
@@ -158,8 +207,6 @@ const RequestedRecoveries = () => {
       functionName: "getGuardianConfig",
       args: [safeAccount.address],
     })) as { threshold: number };
-
-    console.log(getGuardianConfig, "getGuardianConfig");
 
     // Update the button state based on the condition. The current weight represents the number of users who have confirmed the email, and the threshold indicates the number of confirmations required before the complete recovery can be called
     if (getRecoveryRequest.currentWeight < getGuardianConfig.threshold) {
@@ -285,8 +332,6 @@ const RequestedRecoveries = () => {
       args: [],
     });
 
-    console.log(safeOwners, "safeOwners");
-
     setIsCompleteRecoveryLoading(true);
     try {
       // Access the current ref value
@@ -339,7 +384,6 @@ const RequestedRecoveries = () => {
   const handleCancelRecovery = useCallback(async () => {
     setIsCancelRecoveryLoading(true);
     setIsTriggerRecoveryLoading(false);
-    console.log(burnerAccountClient);
 
     if (!owner || !owner.account) {
       toast.error("owner not connected");
