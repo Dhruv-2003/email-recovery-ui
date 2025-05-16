@@ -58,8 +58,6 @@ const GuardianSetup = () => {
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  console.log(owner);
-
   const checkIfRecoveryIsConfigured = useCallback(async () => {
     let burnerWalletAddress;
     const safeAccount = localStorage.getItem("safeAccount");
@@ -72,8 +70,6 @@ const GuardianSetup = () => {
       return;
     }
 
-    console.log(burnerWalletAddress, "burnerWalletAddress");
-
     setIsAccountInitializedLoading(true);
     const getGuardianConfig = (await readContract(appKitConfig, {
       abi: universalEmailRecoveryModuleAbi,
@@ -81,8 +77,6 @@ const GuardianSetup = () => {
       functionName: "getGuardianConfig",
       args: [burnerWalletAddress],
     })) as GuardianConfig;
-
-    console.log(getGuardianConfig, "getGuardianConfig");
 
     // Check whether recovery is configured
     if (
@@ -140,26 +134,19 @@ const GuardianSetup = () => {
         toast.error("Owner wallet not connected.");
         return;
       }
-
-      console.log(owner.account);
-
       const safeAccount = await getSafeAccount(
         owner,
         burnerAccount as PrivateKeyAccount
       );
-
-      console.log(safeAccount);
 
       const smartAccountClient = await getSmartAccountClient(
         owner,
         burnerAccount as PrivateKeyAccount
       );
 
-      console.log(smartAccountClient);
-
       const acctCode = await genAccountCode();
       await localStorage.setItem("accountCode", acctCode);
-      console.log(acctCode, "accountCode in configureRecovery"); // Use acctCode directly
+      // console.log(acctCode, "accountCode in configureRecovery"); // Use acctCode directly
       setAccountCode(acctCode as `0x${string}`);
 
       setLoading(true);
@@ -220,10 +207,13 @@ const GuardianSetup = () => {
         },
       });
 
+      // NOTE: Disabling the wait logic for configuring recovery
       // Setting up interval for polling
-      intervalRef.current = setInterval(() => {
-        checkIfRecoveryIsConfigured();
-      }, 5000); // Adjust the interval time (in milliseconds) as needed
+      // intervalRef.current = setInterval(() => {
+      //   checkIfRecoveryIsConfigured();
+      // }, 5000); // Adjust the interval time (in milliseconds) as needed
+
+      stepsContext?.setStep(STEPS.WALLET_ACTIONS);
     } catch (err: any) {
       // Typed err as any to access shortMessage, or use a more specific error type
       console.error("Error in configureRecoveryAndRequestGuardian:", err);

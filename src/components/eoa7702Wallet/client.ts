@@ -49,20 +49,6 @@ export const pimlicoClient: PimlicoClient = createPimlicoClient({
   chain: baseSepolia,
 });
 
-if (!import.meta.env.VITE_RELAY_PRIVATE_KEY) {
-  throw new Error("VITE_RELAY_PRIVATE_KEY does not exist");
-}
-
-const relay = privateKeyToAccount(
-  import.meta.env.VITE_RELAY_PRIVATE_KEY as `0x${string}`
-);
-
-export const relayClient = createWalletClient({
-  account: relay,
-  chain: baseSepolia,
-  transport: http(),
-});
-
 export const getSafeAccount = async (
   owner: WalletClient,
   eoaAccount: PrivateKeyAccount

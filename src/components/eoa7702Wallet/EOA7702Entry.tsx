@@ -26,9 +26,6 @@ const EOA7702Entry = () => {
   const account = useAccount();
   const { data: walletClient } = useWalletClient();
 
-  console.log(account);
-  console.log(walletClient);
-
   const { setBurnerAccountClient, burnerAccount, setBurnerAccount } =
     useBurnerAccount();
   const stepsContext = useContext(StepsContext);
@@ -168,8 +165,6 @@ const EOA7702Entry = () => {
       transport: http(),
     });
     setBurnerAccountClient(burnerWalletClient);
-
-    console.log(burnerAccount);
 
     try {
       const safeAccount = await getSafeAccount(owner, burnerAccount);
