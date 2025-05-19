@@ -9,20 +9,13 @@ import { STEPS } from "../../constants";
 import { useBurnerAccount } from "../../context/BurnerAccountContext";
 import { Button } from "../Button";
 import Loader from "../Loader";
-import {
-  createWebAuthnCredential,
-  P256Credential,
-  toWebAuthnAccount,
-} from "viem/account-abstraction";
-import { createWalletClient, http, PrivateKeyAccount } from "viem";
+
+import { createWalletClient, http } from "viem";
 import { useAccount, useWalletClient } from "wagmi";
 import { baseSepolia } from "viem/chains";
 import { upgradeEOAWith7702 } from "./auth";
 
 const EOA7702Entry = () => {
-  const [ownerPasskeyCredential, setOwnerPasskeyCredential] =
-    useState<P256Credential>();
-
   const account = useAccount();
   const { data: walletClient } = useWalletClient();
 
@@ -34,26 +27,8 @@ const EOA7702Entry = () => {
     useState(false);
   const [isBurnerWalletUpgrading, setIsBurnerWalletUpgrading] = useState(false);
   const [isCodeSet, setIsCodeSet] = useState<boolean>(false);
-  // const [isOwnerPasskeyPresent, setIsOwnerPasskeyPresent] = useState(false);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // TODO: Passkey logic is disabled for now
-  // Check if the primary passkey credenital is already present
-  // useEffect(() => {
-  //   const ownerPasskeyCredential = localStorage.getItem(
-  //     "ownerPasskeyCredential"
-  //   );
-  //   if (
-  //     ownerPasskeyCredential !== undefined &&
-  //     ownerPasskeyCredential !== null
-  //   ) {
-  //     setOwnerPasskeyCredential(
-  //       JSON.parse(ownerPasskeyCredential) as P256Credential
-  //     );
-  //     setIsOwnerPasskeyPresent(true);
-  //   }
-  // }, [ownerPasskeyCredential]);
 
   // Check if the burner wallet is already upgraded to a safe account via 7702
   const checkIfEOA7702AccountInitialized = async () => {
@@ -111,37 +86,8 @@ const EOA7702Entry = () => {
     };
   }, [walletClient]);
 
-  // TODO: Passkey logic is disabled for now
-  const createPassKeyAccount = async (): Promise<P256Credential> => {
-    if (ownerPasskeyCredential) {
-      console.log("Passkey already created");
-      toast.success(
-        "Passkey already created. Please proceed to the next step."
-      );
-      return ownerPasskeyCredential;
-    }
-    const credential = await createWebAuthnCredential({
-      name: "Wallet",
-    });
-    localStorage.setItem("ownerPasskeyCredential", JSON.stringify(credential));
-    setOwnerPasskeyCredential(credential);
-    return credential;
-  };
-
   const upgradeEOA = async () => {
     setIsBurnerWalletUpgrading(true);
-
-    // TODO: Passkey logic is disabled for now
-    // let credential: P256Credential;
-    // if (!ownerPasskeyCredential) {
-    //   credential = await createPassKeyAccount();
-    // } else {
-    //   credential = ownerPasskeyCredential;
-    // }
-
-    // const ownerPasskeyAccount = toWebAuthnAccount({
-    //   credential: credential as P256Credential,
-    // });
 
     if (!account.isConnected || !walletClient) {
       console.log("No account found, Connect wallet!");

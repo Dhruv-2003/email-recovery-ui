@@ -49,12 +49,11 @@ const GuardianSetup = () => {
     useState(false);
   const [loading, setLoading] = useState(false);
 
-  // 0 = 2 week default delay, don't do for demo
   const [recoveryDelay, setRecoveryDelay] = useState(6);
   const [emailError, setEmailError] = useState(false);
   const [recoveryDelayUnit, setRecoveryDelayUnit] = useState<
     keyof typeof TIME_UNITS
-  >(TIME_UNITS.HOURS.value as keyof typeof TIME_UNITS); // Ensure initial value is a valid key
+  >(TIME_UNITS.HOURS.value as keyof typeof TIME_UNITS);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -144,10 +143,9 @@ const GuardianSetup = () => {
         burnerAccount as PrivateKeyAccount
       );
 
-      const acctCode = await genAccountCode();
-      await localStorage.setItem("accountCode", acctCode);
-      // console.log(acctCode, "accountCode in configureRecovery"); // Use acctCode directly
-      setAccountCode(acctCode as `0x${string}`);
+      const accountCode = await genAccountCode();
+      await localStorage.setItem("accountCode", accountCode);
+      setAccountCode(accountCode as `0x${string}`);
 
       setLoading(true);
 
@@ -155,7 +153,7 @@ const GuardianSetup = () => {
 
       // The run function installs the recovery module, and returns the wallet's address.
       await run(
-        acctCode as `0x${string}`,
+        accountCode as `0x${string}`,
         guardianEmail,
         safeAccount,
         smartAccountClient,
@@ -170,14 +168,13 @@ const GuardianSetup = () => {
         address: universalEmailRecoveryModule as `0x${string}`,
         functionName: "acceptanceCommandTemplates",
         args: [],
-      })) as AcceptanceCommandTemplatesResult; // Cast to defined type
-
+      })) as AcceptanceCommandTemplatesResult;
       try {
         // Attempt the API call
         await relayer.acceptanceRequest(
           universalEmailRecoveryModule as `0x${string}`,
           guardianEmail,
-          acctCode.slice(2),
+          accountCode.slice(2),
           templateIdx,
           subject[0]
             .join()
@@ -191,7 +188,7 @@ const GuardianSetup = () => {
         await relayer.acceptanceRequest(
           universalEmailRecoveryModule as `0x${string}`,
           guardianEmail,
-          acctCode.slice(2),
+          accountCode.slice(2),
           templateIdx,
           subject[0]
             .join()

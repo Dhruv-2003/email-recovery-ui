@@ -39,7 +39,6 @@ const CompleteRecoveryTime = ({
 }: {
   timeLeftRef: React.MutableRefObject<number>;
 }) => {
-  // Local state only for display purposes in this component
   const [displayTime, setDisplayTime] = useState<number>(0);
   const [display, setDisplay] = useState<string>("0 Secs");
 
@@ -101,7 +100,7 @@ const CompleteRecoveryTime = ({
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [timeLeftRef]); // Empty dependency array - only run on mount
+  }, [timeLeftRef]);
 
   const convertDisplayTime = (timeLeftInSeconds: number): string => {
     if (timeLeftInSeconds <= 0) {
@@ -288,7 +287,6 @@ const RequestedRecoveries = () => {
       .replace("{string}", recoveryDataHash);
 
     try {
-      // requestId
       await relayer.recoveryRequest(
         universalEmailRecoveryModule as string,
         guardianEmailAddress,
@@ -334,7 +332,6 @@ const RequestedRecoveries = () => {
 
     setIsCompleteRecoveryLoading(true);
     try {
-      // Access the current ref value
       if (timeLeftToCompleteRecoveryRef.current > 0) {
         throw new Error("Recovery delay has not passed");
       }

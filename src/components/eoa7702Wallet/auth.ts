@@ -22,7 +22,9 @@ if (!import.meta.env.VITE_7702_RELAYER_URL) {
   throw new Error("VITE_7702_RELAYER_URL does not exist");
 }
 
-const realyer_7702_url = import.meta.env.VITE_7702_RELAYER_URL;
+const relayer_7702_url = import.meta.env.VITE_7702_RELAYER_URL;
+
+const DEFAULT_SIGNER_THRESHOLD = 1;
 
 export async function upgradeEOAWith7702(
   burner: WalletClient,
@@ -36,7 +38,7 @@ export async function upgradeEOAWith7702(
 
   // Parameters for Safe's setup call.
   const owners = [owner.account!.address];
-  const signerThreshold = 1n;
+  const signerThreshold = BigInt(DEFAULT_SIGNER_THRESHOLD);
   const setupAddress = erc7569LaunchpadAddress as `0x${string}`;
 
   // This will enable the 7579 adaptor to be used with this safe on setup.
@@ -77,7 +79,7 @@ export async function upgradeEOAWith7702(
   };
 
   // Call the relayer
-  const res = await fetch(`${realyer_7702_url}api/relay/delegate`, {
+  const res = await fetch(`${relayer_7702_url}api/relay/delegate`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
