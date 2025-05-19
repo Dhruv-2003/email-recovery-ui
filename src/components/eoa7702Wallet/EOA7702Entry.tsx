@@ -2,7 +2,7 @@ import { Box, Typography } from "@mui/material";
 import { useContext, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { privateKeyToAccount } from "viem/accounts";
-import { getSafeAccount, publicClient } from "./client";
+import { getKernelAccount, publicClient } from "./client";
 import { getSmartAccountClient } from "./client";
 import { StepsContext } from "../../App";
 import { STEPS } from "../../constants";
@@ -14,17 +14,13 @@ import {
   P256Credential,
   toWebAuthnAccount,
 } from "viem/account-abstraction";
-import { createWalletClient, http, PrivateKeyAccount } from "viem";
-import { useAccount, useWalletClient } from "wagmi";
+import { createWalletClient, http } from "viem";
 import { baseSepolia } from "viem/chains";
-import { upgradeEOAWith7702 } from "./auth";
+import { upgradeKernel7702 } from "./auth";
 
 const EOA7702Entry = () => {
   const [ownerPasskeyCredential, setOwnerPasskeyCredential] =
     useState<P256Credential>();
-
-  const account = useAccount();
-  const { data: walletClient } = useWalletClient();
 
   const { setBurnerAccountClient, burnerAccount, setBurnerAccount } =
     useBurnerAccount();
@@ -34,26 +30,22 @@ const EOA7702Entry = () => {
     useState(false);
   const [isBurnerWalletUpgrading, setIsBurnerWalletUpgrading] = useState(false);
   const [isCodeSet, setIsCodeSet] = useState<boolean>(false);
-  // const [isOwnerPasskeyPresent, setIsOwnerPasskeyPresent] = useState(false);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
-  // TODO: Passkey logic is disabled for now
-  // Check if the primary passkey credenital is already present
-  // useEffect(() => {
-  //   const ownerPasskeyCredential = localStorage.getItem(
-  //     "ownerPasskeyCredential"
-  //   );
-  //   if (
-  //     ownerPasskeyCredential !== undefined &&
-  //     ownerPasskeyCredential !== null
-  //   ) {
-  //     setOwnerPasskeyCredential(
-  //       JSON.parse(ownerPasskeyCredential) as P256Credential
-  //     );
-  //     setIsOwnerPasskeyPresent(true);
-  //   }
-  // }, [ownerPasskeyCredential]);
+  const checkPasskeyCredential = async () => {
+    const ownerPasskeyCredential = localStorage.getItem(
+      "ownerPasskeyCredential"
+    );
+    if (
+      ownerPasskeyCredential !== undefined &&
+      ownerPasskeyCredential !== null
+    ) {
+      setOwnerPasskeyCredential(
+        JSON.parse(ownerPasskeyCredential) as P256Credential
+      );
+    }
+  };
 
   // Check if the burner wallet is already upgraded to a safe account via 7702
   const checkIfEOA7702AccountInitialized = async () => {
@@ -103,13 +95,14 @@ const EOA7702Entry = () => {
   // Check if the burner wallet is already present
   useEffect(() => {
     checkIfEOA7702AccountInitialized();
+    checkPasskeyCredential();
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [walletClient]);
+  }, []);
 
   // TODO: Passkey logic is disabled for now
   const createPassKeyAccount = async (): Promise<P256Credential> => {
@@ -121,8 +114,9 @@ const EOA7702Entry = () => {
       return ownerPasskeyCredential;
     }
     const credential = await createWebAuthnCredential({
-      name: "Wallet",
+      name: "zkemail.recovery.demo",
     });
+    console.log("Passkey created", credential);
     localStorage.setItem("ownerPasskeyCredential", JSON.stringify(credential));
     setOwnerPasskeyCredential(credential);
     return credential;
@@ -132,23 +126,16 @@ const EOA7702Entry = () => {
     setIsBurnerWalletUpgrading(true);
 
     // TODO: Passkey logic is disabled for now
-    // let credential: P256Credential;
-    // if (!ownerPasskeyCredential) {
-    //   credential = await createPassKeyAccount();
-    // } else {
-    //   credential = ownerPasskeyCredential;
-    // }
-
-    // const ownerPasskeyAccount = toWebAuthnAccount({
-    //   credential: credential as P256Credential,
-    // });
-
-    if (!account.isConnected || !walletClient) {
-      console.log("No account found, Connect wallet!");
-      toast.error("No account found. Please connect your wallet first.");
-      setIsBurnerWalletUpgrading(false);
-      return;
+    let credential: P256Credential;
+    if (!ownerPasskeyCredential) {
+      credential = await createPassKeyAccount();
+    } else {
+      credential = ownerPasskeyCredential;
     }
+
+    const ownerPasskeyAccount = toWebAuthnAccount({
+      credential: credential as P256Credential,
+    });
 
     if (!burnerAccount) {
       console.log("No burner account found! Cannot upgrade.");
@@ -157,7 +144,7 @@ const EOA7702Entry = () => {
       return;
     }
 
-    let owner = walletClient;
+    let owner = ownerPasskeyAccount;
 
     const burnerWalletClient = createWalletClient({
       account: burnerAccount,
@@ -167,15 +154,19 @@ const EOA7702Entry = () => {
     setBurnerAccountClient(burnerWalletClient);
 
     try {
-      const safeAccount = await getSafeAccount(owner, burnerAccount);
+      // const safeAccount = await getSafeAccount(owner, burnerAccount);
+      const kernelAccount = await getKernelAccount(owner, burnerAccount);
       const smartAccountClient = await getSmartAccountClient(
         owner,
         burnerAccount
       );
 
-      await upgradeEOAWith7702(burnerWalletClient, owner);
+      // await upgradeEOAWith7702(burnerWalletClient, owner);
+      await upgradeKernel7702(burnerWalletClient, owner);
 
-      localStorage.setItem("safeAccount", JSON.stringify(safeAccount));
+      // localStorage.setItem("safeAccount", JSON.stringify(safeAccount));
+      localStorage.setItem("kernelAccount", JSON.stringify(kernelAccount));
+
       localStorage.setItem(
         "smartAccountClient",
         JSON.stringify(smartAccountClient)
@@ -209,10 +200,17 @@ const EOA7702Entry = () => {
         padding: "2rem",
       }}
     >
-      {!account.isConnected ? (
+      {!ownerPasskeyCredential ? (
         <>
           <Typography variant="h2" sx={{ paddingBottom: "1.5rem" }}>
-            Connect Your Wallet
+            <Button
+              onClick={createPassKeyAccount}
+              variant={"contained"}
+              //@ts-ignore
+              sx={{ minWidth: "220px" }}
+            >
+              Create your Passkey
+            </Button>
           </Typography>
           <Typography
             variant="body1"
@@ -241,11 +239,7 @@ const EOA7702Entry = () => {
             sx={{ paddingBottom: "2rem", color: "text.secondary" }}
           >
             Click the button below to upgrade it to a Safe(v1.4.1) smart account
-            using EIP-7702. Your connected wallet (
-            {account.address
-              ? `${account.address.slice(0, 6)}...${account.address.slice(-4)}`
-              : "N/A"}
-            ) will be set as an owner.
+            using EIP-7702. Your connected passkey will be set as an owner.
           </Typography>
 
           <Button

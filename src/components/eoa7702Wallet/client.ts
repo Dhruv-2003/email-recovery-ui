@@ -1,6 +1,12 @@
-import { createSmartAccountClient } from "permissionless";
 import {
+  createSmartAccountClient,
+  SmartAccountActions,
+  SmartAccountClient,
+} from "permissionless";
+import {
+  KernelSmartAccountImplementation,
   type SafeSmartAccountImplementation,
+  toKernelSmartAccount,
   toSafeSmartAccount,
 } from "permissionless/accounts";
 import {
@@ -15,7 +21,6 @@ import {
   type Chain,
   type Client,
   createPublicClient,
-  createWalletClient,
   http,
   PrivateKeyAccount,
   type RpcSchema,
@@ -24,6 +29,7 @@ import {
 } from "viem";
 import {
   entryPoint07Address,
+  WebAuthnAccount,
   type SmartAccount,
 } from "viem/account-abstraction";
 import { baseSepolia } from "viem/chains";
@@ -33,7 +39,12 @@ import {
   erc7569LaunchpadAddress,
   safe4337ModuleAddress,
 } from "../../../contracts.base-sepolia.json";
-import { privateKeyToAccount } from "viem/accounts";
+
+import {
+  PasskeyValidatorContractVersion,
+  getValidatorAddress,
+} from "@zerodev/passkey-validator";
+import { KERNEL_V3_1 } from "@zerodev/sdk/constants";
 
 export const publicClient = createPublicClient({
   transport: http(config.rpcUrl),
@@ -49,35 +60,58 @@ export const pimlicoClient: PimlicoClient = createPimlicoClient({
   chain: baseSepolia,
 });
 
-export const getSafeAccount = async (
-  owner: WalletClient,
+// export const getSafeAccount = async (
+//   owner: WalletClient,
+//   eoaAccount: PrivateKeyAccount
+// ): Promise<SmartAccount<SafeSmartAccountImplementation>> => {
+//   return await toSafeSmartAccount({
+//     address: eoaAccount.address,
+//     client: publicClient,
+//     owners: [owner],
+//     version: "1.4.1",
+//     entryPoint: {
+//       address: entryPoint07Address,
+//       version: "0.7",
+//     },
+//     safe4337ModuleAddress: safe4337ModuleAddress as `0x${string}`,
+//     erc7579LaunchpadAddress: erc7569LaunchpadAddress as `0x${string}`,
+//     attesters: [attestor as `0x${string}`],
+//     attestersThreshold: 1,
+//   });
+// };
+
+export const PASSKEY_VALIDATOR = getValidatorAddress(
+  {
+    address: entryPoint07Address,
+    version: "0.7",
+  },
+  KERNEL_V3_1,
+  PasskeyValidatorContractVersion.V0_0_2
+);
+
+export const getKernelAccount = async (
+  owner: WebAuthnAccount,
   eoaAccount: PrivateKeyAccount
-): Promise<SmartAccount<SafeSmartAccountImplementation>> => {
-  return await toSafeSmartAccount({
+): Promise<SmartAccount<KernelSmartAccountImplementation>> => {
+  return toKernelSmartAccount({
     address: eoaAccount.address,
     client: publicClient,
+    version: "0.3.1",
     owners: [owner],
-    version: "1.4.1",
     entryPoint: {
       address: entryPoint07Address,
       version: "0.7",
     },
-    safe4337ModuleAddress: safe4337ModuleAddress as `0x${string}`,
-    erc7579LaunchpadAddress: erc7569LaunchpadAddress as `0x${string}`,
-    attesters: [attestor as `0x${string}`],
-    attestersThreshold: 1,
+    validatorAddress: PASSKEY_VALIDATOR,
   });
 };
 
 export const getSmartAccountClient = async (
-  owner: WalletClient,
+  owner: WebAuthnAccount,
   eoaAccount: PrivateKeyAccount
-): Promise<
-  Client<Transport, Chain, SmartAccount, RpcSchema> &
-    Erc7579Actions<SmartAccount<SafeSmartAccountImplementation>>
-> => {
+) => {
   return createSmartAccountClient({
-    account: await getSafeAccount(owner, eoaAccount),
+    account: await getKernelAccount(owner, eoaAccount),
     chain: baseSepolia,
     bundlerTransport: http(config.bundlerUrl),
     paymaster: pimlicoClient,
@@ -86,5 +120,5 @@ export const getSmartAccountClient = async (
         return (await pimlicoClient.getUserOperationGasPrice()).fast;
       },
     },
-  }).extend(erc7579Actions());
+  });
 };
