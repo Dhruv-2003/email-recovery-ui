@@ -1,8 +1,10 @@
 import {
   Account,
   Chain,
+  createWalletClient,
   encodeFunctionData,
   Hex,
+  http,
   parseAbi,
   RpcSchema,
   Transport,
@@ -17,9 +19,14 @@ import {
   safe4337ModuleAddress,
 } from "../../../contracts.base-sepolia.json";
 import { safeAbi } from "../../abi/Safe";
+import { privateKeyToAccount } from "viem/accounts";
+import { baseSepolia } from "viem/chains";
+import config from "../burnerWallet/config";
 
 if (!import.meta.env.VITE_7702_RELAYER_URL) {
-  throw new Error("VITE_7702_RELAYER_URL does not exist");
+  if (!import.meta.env.VITE_7702_RELAYER_PRIVATE_KEY) {
+    throw new Error("7702_RELAYER env does not exist");
+  }
 }
 
 const relayer_7702_url = import.meta.env.VITE_7702_RELAYER_URL;
@@ -64,40 +71,73 @@ export async function upgradeEOAWith7702(
     ],
   });
 
-  const relay_req = {
-    to: burner.account!.address,
-    data,
-    authorization: {
-      address: authorization.address,
-      chainId: authorization.chainId,
-      nonce: authorization.nonce,
-      r: authorization.r,
-      s: authorization.s,
-      v: Number(authorization.v),
-      yParity: authorization.yParity,
-    },
-  };
+  let txHash: Hex;
 
-  // Call the relayer
-  const res = await fetch(`${relayer_7702_url}api/relay/delegate`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(relay_req),
-  });
+  if (relayer_7702_url) {
+    const relay_req = {
+      to: burner.account!.address,
+      data,
+      authorization: {
+        address: authorization.address,
+        chainId: authorization.chainId,
+        nonce: authorization.nonce,
+        r: authorization.r,
+        s: authorization.s,
+        v: Number(authorization.v),
+        yParity: authorization.yParity,
+      },
+    };
 
-  if (!res.ok) {
-    const errorData = await res
-      .json()
-      .catch(() => ({ message: res.statusText }));
-    console.error("Error from relay delegate:", errorData);
-    throw new Error(
-      errorData.message || `Request failed with status ${res.status}`
-    );
+    // Call the relayer
+    const res = await fetch(`${relayer_7702_url}api/relay/delegate`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(relay_req),
+    });
+
+    if (!res.ok) {
+      const errorData = await res
+        .json()
+        .catch(() => ({ message: res.statusText }));
+      console.error("Error from relay delegate:", errorData);
+      throw new Error(
+        errorData.message || `Request failed with status ${res.status}`
+      );
+    }
+
+    const txData = await res.json();
+    txHash = txData.txHash as Hex;
+  } else {
+    const RELAY_PRIVATE_KEY =
+      (import.meta.env.VITE_7702_RELAYER_PRIVATE_KEY as `0x${string}`) || "0x";
+
+    const relayAccount = privateKeyToAccount(RELAY_PRIVATE_KEY);
+
+    const relayClient = createWalletClient({
+      account: relayAccount,
+      chain: baseSepolia,
+      transport: http(config.rpcUrl),
+    });
+
+    txHash = await relayClient.writeContract({
+      address: burner.account!.address,
+      abi: safeAbi,
+      functionName: "setup",
+      args: [
+        owners,
+        signerThreshold,
+        setupAddress,
+        setupData,
+        fallbackHandler,
+        paymentToken,
+        paymentValue,
+        paymentReceiver,
+      ],
+      authorizationList: [authorization],
+    });
   }
-
-  const { txHash } = await res.json();
 
   console.log("EIP 7702 upgrde and setup tx Hash", txHash);
 
