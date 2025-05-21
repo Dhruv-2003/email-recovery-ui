@@ -1,4 +1,5 @@
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
+import KeyIcon from "@mui/icons-material/Key";
 import SwapHorizIcon from "@mui/icons-material/SwapHoriz";
 import { Grid, Typography, useTheme } from "@mui/material";
 import { useContext, useState } from "react";
@@ -13,7 +14,11 @@ import SvgWrapper from "../components/SvgIconWrapper";
 import Toggle from "../components/Toggle";
 import { STEPS } from "../constants";
 
-type actionType = "SAFE_WALLET" | "BURNER_WALLET" | "WALLET_RECOVERY";
+type actionType =
+  | "SAFE_WALLET"
+  | "BURNER_WALLET"
+  | "WALLET_RECOVERY"
+  | "EOA_7702_WALLET";
 type FlowType = "setup" | "recover";
 
 const LandingPage = () => {
@@ -36,6 +41,8 @@ const LandingPage = () => {
         return navigate("/safe-wallet");
       case "BURNER_WALLET":
         return navigate("/burner-wallet");
+      case "EOA_7702_WALLET":
+        return navigate("/7702-eoa-wallet");
       case "WALLET_RECOVERY":
         return navigate("/wallet-recovery");
       default:
@@ -67,16 +74,21 @@ const LandingPage = () => {
             {/* GNOSIS SAFE */}
             <FlowInfoCard
               icon={
-                <SvgWrapper
-                  src={gnosisSafeLogo}
-                  sx={{ width: "2.25rem", height: "2.25rem" }}
+                <KeyIcon
+                  sx={{
+                    width: "2.25rem",
+                    height: "2.25rem",
+                    color: "#000000",
+                  }}
                 />
               }
-              buttonText={"Safe Wallet Flow"}
-              handleButtonClick={() => handleClick("SAFE_WALLET")}
-              title={"Safe"}
-              description={"Copy the link and import into your Safe wallet"}
-              infoIconTitle={"Gnosis Safe Wallet Recovery Setup"}
+              buttonText={"7702 EOA Flow"}
+              handleButtonClick={() => handleClick("EOA_7702_WALLET")}
+              title={"7702"}
+              description={
+                "Try out account for a Smart EOA upgraded using 7702. It combines the simplicity of an EOA with smart contract capabilities like transaction batching, session keys, and enhanced security features, all controlled by your primary signer."
+              }
+              infoIconTitle={"7702 EOA Wallet Recovery Setup"}
               infoIconDescription={
                 "This message will get sent along in the email with our default instructions. This can be helpful later for your guardians to find the email that contains your lost wallet without having to remember the lost wallet address."
               }
