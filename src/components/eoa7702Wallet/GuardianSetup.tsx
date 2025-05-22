@@ -16,6 +16,8 @@ import {
   getKernelAccount,
   publicClient,
   getSmartAccountClient,
+  getSafeAccount,
+  getSafeSmartAccountClient,
   pimlicoClient,
 } from "./client";
 import { universalEmailRecoveryModule } from "../../../contracts.base-sepolia.json";
@@ -31,12 +33,7 @@ import { genAccountCode, templateIdx } from "../../utils/email";
 import { TIME_UNITS } from "../../utils/recoveryDataUtils";
 import { Button } from "../Button";
 import Loader from "../Loader";
-import {
-  checksumAddress,
-  encodeFunctionData,
-  parseEther,
-  PrivateKeyAccount,
-} from "viem";
+import { PrivateKeyAccount } from "viem";
 import { run } from "./deploy";
 import { GuardianConfig, AcceptanceCommandTemplatesResult } from "./types";
 import {
@@ -44,16 +41,15 @@ import {
   toWebAuthnAccount,
   WebAuthnAccount,
 } from "viem/account-abstraction";
-import { computeGuardianAddress } from "../burnerWallet/helpers/computeGuardianAddress";
-
-import { encodeAbiParameters, toFunctionSelector, toHex } from "viem";
-import kernelV3_1ImplementationAbi from "../../abi/kernelv3";
 
 //logic for valid email address check for input
 const isValidEmail = (email: string) => {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return re.test(String(email).toLowerCase());
 };
+
+// TODO: Add a check to see if the module is installed but the acceptance request is not completed by the user
+// The user will be redirected back from the trigger recovery page if the acceptance request is not completed
 
 const GuardianSetup = () => {
   const { burnerAccountClient, burnerAccount } = useBurnerAccount();
@@ -96,10 +92,17 @@ const GuardianSetup = () => {
 
   const checkIfRecoveryIsConfigured = useCallback(async () => {
     let burnerWalletAddress;
-    const kernelAccount = localStorage.getItem("kernelAccount");
 
-    if (kernelAccount) {
-      burnerWalletAddress = JSON.parse(kernelAccount).address;
+    // const kernelAccount = localStorage.getItem("kernelAccount");
+
+    // if (kernelAccount) {
+    //   burnerWalletAddress = JSON.parse(kernelAccount).address;
+    // }
+
+    const safeAccount = localStorage.getItem("safeAccount");
+
+    if (safeAccount) {
+      burnerWalletAddress = JSON.parse(safeAccount).address;
     }
 
     if (!burnerWalletAddress) {
@@ -178,15 +181,25 @@ const GuardianSetup = () => {
 
       // console.log("Signature:", sig);
 
-      const kernelAccount = await getKernelAccount(
+      const safeAccount = await getSafeAccount(
         ownerAccount,
         burnerAccount as PrivateKeyAccount
       );
 
-      const smartAccountClient = await getSmartAccountClient(
+      const smartAccountClient = await getSafeSmartAccountClient(
         ownerAccount,
         burnerAccount as PrivateKeyAccount
       );
+
+      // const kernelAccount = await getKernelAccount(
+      //   ownerAccount,
+      //   burnerAccount as PrivateKeyAccount
+      // );
+
+      // const smartAccountClient = await getSmartAccountClient(
+      //   ownerAccount,
+      //   burnerAccount as PrivateKeyAccount
+      // );
 
       const accountCode = await genAccountCode();
       await localStorage.setItem("accountCode", accountCode);
@@ -197,75 +210,16 @@ const GuardianSetup = () => {
 
       console.log("installing module.....");
 
-      const guardianAddress = await computeGuardianAddress(
-        kernelAccount.address,
-        accountCode as `0x${string}`,
-        guardianEmail
-      );
-
-      const validator = kernelAccount.address;
-      const isInstalledContext = toHex(0);
-      const functionSelector = toFunctionSelector(
-        "swapOwner(address,address,address)"
-      );
-      const guardians = [guardianAddress];
-      const guardianWeights = [1n];
-      const threshold = 1n;
-      const expiry = 2n * 7n * 24n * 60n * 60n; // 2 weeks in seconds
-
-      const moduleData = encodeAbiParameters(
-        [
-          { name: "validator", type: "address" },
-          { name: "isInstalledContext", type: "bytes" },
-          { name: "initialSelector", type: "bytes4" },
-          { name: "guardians", type: "address[]" },
-          { name: "weights", type: "uint256[]" },
-          { name: "delay", type: "uint256" },
-          { name: "expiry", type: "uint256" },
-          { name: "threshold", type: "uint256" },
-        ],
-        [
-          validator,
-          isInstalledContext,
-          functionSelector,
-          guardians,
-          guardianWeights,
-          threshold,
-          BigInt(recoveryDelay * TIME_UNITS[recoveryDelayUnit].multiplier),
-          expiry,
-        ]
-      );
-
-      // const opHash2 = await smartAccountClient.send
-
-      const opHash = await smartAccountClient.sendTransaction({
-        to: kernelAccount.address as `0x${string}`,
-        value: BigInt(0),
-        data: encodeFunctionData({
-          abi: kernelV3_1ImplementationAbi,
-          functionName: "installModule",
-          args: [
-            BigInt(2),
-            checksumAddress(universalEmailRecoveryModule as `0x${string}`),
-            moduleData,
-          ],
-        }),
-      });
-
-      console.log("User Operation Hash:", opHash);
-
-      await pimlicoClient.waitForUserOperationReceipt({
-        hash: opHash,
-      });
-
       // // The run function installs the recovery module, and returns the wallet's address.
-      // await run(
-      //   accountCode as `0x${string}`,
-      //   guardianEmail,
-      //   kernelAccount,
-      //   smartAccountClient,
-      //   recoveryDelay * TIME_UNITS[recoveryDelayUnit].multiplier
-      // );
+      const userOpReciept = await run(
+        accountCode as `0x${string}`,
+        guardianEmail,
+        ownerAccount,
+        safeAccount,
+        smartAccountClient,
+        recoveryDelay * TIME_UNITS[recoveryDelayUnit].multiplier
+      );
+      const txHash = userOpReceipt.receipt.transactionHash;
 
       console.log("Recovery module installed");
 
@@ -287,7 +241,7 @@ const GuardianSetup = () => {
           subject[0]
             .join()
             .replace(/,/g, " ")
-            .replace("{ethAddr}", kernelAccount.address)
+            .replace("{ethAddr}", safeAccount.address)
         );
       } catch (error) {
         // retry mechanism as this API call fails for the first time
@@ -301,7 +255,7 @@ const GuardianSetup = () => {
           subject[0]
             .join()
             .replace(/,/g, " ")
-            .replace("{ethAddr}", kernelAccount.address)
+            .replace("{ethAddr}", safeAccount.address)
         );
       }
 
@@ -314,9 +268,9 @@ const GuardianSetup = () => {
 
       // NOTE: Disabling the wait logic for configuring recovery
       // Setting up interval for polling
-      // intervalRef.current = setInterval(() => {
-      //   checkIfRecoveryIsConfigured();
-      // }, 5000); // Adjust the interval time (in milliseconds) as needed
+      intervalRef.current = setInterval(() => {
+        checkIfRecoveryIsConfigured();
+      }, 5000); // Adjust the interval time (in milliseconds) as needed
 
       stepsContext?.setStep(STEPS.WALLET_ACTIONS);
     } catch (err: any) {

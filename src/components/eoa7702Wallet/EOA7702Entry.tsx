@@ -2,8 +2,14 @@ import { Box, Typography } from "@mui/material";
 import { useContext, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { privateKeyToAccount } from "viem/accounts";
-import { getKernelAccount, publicClient } from "./client";
-import { getSmartAccountClient } from "./client";
+import {
+  getKernelAccount,
+  publicClient,
+  getSmartAccountClient,
+  getSafeAccount,
+  getSafeSmartAccountClient,
+} from "./client";
+
 import { StepsContext } from "../../App";
 import { STEPS } from "../../constants";
 import { useBurnerAccount } from "../../context/BurnerAccountContext";
@@ -16,8 +22,9 @@ import {
 } from "viem/account-abstraction";
 import { createWalletClient, http } from "viem";
 import { baseSepolia } from "viem/chains";
-import { upgradeKernel7702 } from "./auth";
+import { upgradeKernel7702, upgradeEOAWith7702 } from "./auth";
 
+// TODO: Current connected passkey account is to be shown and allowed for the user to be refreshed if they want
 const EOA7702Entry = () => {
   const [ownerPasskeyCredential, setOwnerPasskeyCredential] =
     useState<P256Credential>();
@@ -104,7 +111,6 @@ const EOA7702Entry = () => {
     };
   }, []);
 
-  // TODO: Passkey logic is disabled for now
   const createPassKeyAccount = async (): Promise<P256Credential> => {
     if (ownerPasskeyCredential) {
       console.log("Passkey already created");
@@ -125,7 +131,6 @@ const EOA7702Entry = () => {
   const upgradeEOA = async () => {
     setIsBurnerWalletUpgrading(true);
 
-    // TODO: Passkey logic is disabled for now
     let credential: P256Credential;
     if (!ownerPasskeyCredential) {
       credential = await createPassKeyAccount();
@@ -154,18 +159,23 @@ const EOA7702Entry = () => {
     setBurnerAccountClient(burnerWalletClient);
 
     try {
-      // const safeAccount = await getSafeAccount(owner, burnerAccount);
-      const kernelAccount = await getKernelAccount(owner, burnerAccount);
-      const smartAccountClient = await getSmartAccountClient(
+      const safeAccount = await getSafeAccount(owner, burnerAccount);
+      const smartAccountClient = await getSafeSmartAccountClient(
         owner,
         burnerAccount
       );
 
-      // await upgradeEOAWith7702(burnerWalletClient, owner);
-      await upgradeKernel7702(burnerWalletClient, owner);
+      // const kernelAccount = await getKernelAccount(owner, burnerAccount);
+      // const smartAccountClient = await getSmartAccountClient(
+      //   owner,
+      //   burnerAccount
+      // );
 
-      // localStorage.setItem("safeAccount", JSON.stringify(safeAccount));
-      localStorage.setItem("kernelAccount", JSON.stringify(kernelAccount));
+      await upgradeEOAWith7702(burnerWalletClient, owner);
+      // await upgradeKernel7702(burnerWalletClient, owner);
+
+      localStorage.setItem("safeAccount", JSON.stringify(safeAccount));
+      // localStorage.setItem("kernelAccount", JSON.stringify(kernelAccount));
 
       localStorage.setItem(
         "smartAccountClient",

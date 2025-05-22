@@ -7,7 +7,6 @@ import {
   keccak256,
   parseAbi,
   parseAbiParameters,
-  PrivateKeyAccount,
   toHex,
   WalletClient,
   zeroAddress,
@@ -28,8 +27,15 @@ import {
   PasskeyValidatorContractVersion,
   getValidatorAddress,
 } from "@zerodev/passkey-validator";
-import { KERNEL_V3_0, KERNEL_V3_1 } from "@zerodev/sdk/constants";
+import { KERNEL_V3_1 } from "@zerodev/sdk/constants";
 import kernelV3_1ImplementationAbi from "../../abi/kernelv3";
+import {
+  RHINESTONE_ATTESTER_ADDRESS,
+  MOCK_ATTESTER_ADDRESS,
+  type Module,
+} from "@rhinestone/module-sdk";
+import { deadOwner } from "./client.ts";
+import { getWebAuthnValidatorFromWebAuthnAccount } from "./utils.ts";
 
 if (!import.meta.env.VITE_7702_RELAYER_URL) {
   throw new Error("VITE_7702_RELAYER_URL does not exist");
@@ -39,20 +45,22 @@ const realyer_7702_url = import.meta.env.VITE_7702_RELAYER_URL;
 
 export async function upgradeEOAWith7702(
   burner: WalletClient,
-  owner: WalletClient
+  owner: WebAuthnAccount
 ): Promise<Hex> {
   const authorization = await burner.signAuthorization({
     account: burner.account!,
     contractAddress: safeSingletonAddress as `0x${string}`,
   });
 
+  const webAuthnValidator = getWebAuthnValidatorFromWebAuthnAccount(owner);
+
   // Parameters for Safe's setup call.
-  const owners = [owner.account!.address];
+  const owners = [deadOwner.address];
   const signerThreshold = 1n;
   const setupAddress = erc7569LaunchpadAddress as `0x${string}`;
 
   // This will enable the 7579 adaptor to be used with this safe on setup.
-  const setupData = getSafeLaunchpadSetupData();
+  const setupData = getSafeLaunchpadSetupData(webAuthnValidator);
 
   const fallbackHandler = safe4337ModuleAddress as `0x${string}`; // Safe 7579 Adaptor address
   const paymentToken = zeroAddress;
@@ -114,7 +122,7 @@ export async function upgradeEOAWith7702(
   return txHash;
 }
 
-export const getSafeLaunchpadSetupData = () => {
+export const getSafeLaunchpadSetupData = (webauthnValidator: Module) => {
   const erc7569LaunchpadCallData = encodeFunctionData({
     abi: parseAbi([
       "struct ModuleInit {address module;bytes initData;}",
@@ -123,11 +131,16 @@ export const getSafeLaunchpadSetupData = () => {
     functionName: "addSafe7579",
     args: [
       safe4337ModuleAddress as `0x${string}`,
+      [
+        {
+          module: webauthnValidator.address,
+          initData: webauthnValidator.initData,
+        },
+      ],
       [],
       [],
       [],
-      [],
-      [attestor as `0x${string}`],
+      [RHINESTONE_ATTESTER_ADDRESS, MOCK_ATTESTER_ADDRESS],
       1,
     ],
   });

@@ -1,23 +1,24 @@
 import "viem/window";
-import {
-  KernelSmartAccountImplementation,
-  SafeSmartAccountImplementation,
-} from "permissionless/accounts";
+import { SafeSmartAccountImplementation } from "permissionless/accounts";
 import { Erc7579Actions } from "permissionless/actions/erc7579";
 import {
   Chain,
+  checksumAddress,
   Client,
   encodeAbiParameters,
+  encodeFunctionData,
   RpcSchema,
   toFunctionSelector,
   toHex,
   Transport,
 } from "viem";
-import { SmartAccount } from "viem/account-abstraction";
-import { publicClient, pimlicoClient } from "./client";
+import { SmartAccount, WebAuthnAccount } from "viem/account-abstraction";
+import { publicClient } from "./client";
 import { computeGuardianAddress } from "../burnerWallet/helpers/computeGuardianAddress";
 import { universalEmailRecoveryModule } from "../../../contracts.base-sepolia.json";
 import { SmartAccountClient } from "permissionless";
+import { sendTransactionFromSafeWithWebAuthn } from "./utils";
+import kernelV3_1ImplementationAbi from "abi/kernelv3";
 
 /**
  * Executes a series of operations to configure a smart account, including transferring Ether,
@@ -33,15 +34,16 @@ import { SmartAccountClient } from "permissionless";
 export async function run(
   accountCode: `0x${string}`,
   guardianEmail: string,
-  kernelAccount: SmartAccount<KernelSmartAccountImplementation>,
+  ownerAccount: WebAuthnAccount,
+  kernelAccount: SmartAccount<SafeSmartAccountImplementation>,
   smartAccountClient: SmartAccountClient<
     Transport,
     Chain,
-    SmartAccount<KernelSmartAccountImplementation>,
+    SmartAccount<SafeSmartAccountImplementation>,
     Client,
     RpcSchema
   > &
-    Erc7579Actions<SmartAccount<KernelSmartAccountImplementation>>,
+    Erc7579Actions<SmartAccount<SafeSmartAccountImplementation>>,
   delay: number
 ) {
   console.log("init run");
@@ -104,20 +106,27 @@ export async function run(
     ]
   );
 
+  const installModuleCall = {
+    to: smartAccountClient.account.address as `0x${string}`,
+    value: BigInt(0),
+    data: encodeFunctionData({
+      abi: kernelV3_1ImplementationAbi,
+      functionName: "installModule",
+      args: [
+        BigInt(2),
+        checksumAddress(universalEmailRecoveryModule as `0x${string}`),
+        moduleData,
+      ],
+    }),
+  };
+
   // acceptanceSubjectTemplates -> [["Accept", "guardian", "request", "for", "{ethAddr}"]]
   // recoverySubjectTemplates -> [["Recover", "account", "{ethAddr}", "using", "recovery", "hash", "{string}"]]
-  const userOpHash = await smartAccountClient.installModule({
-    type: "executor",
-    address: universalEmailRecoveryModule as `0x${string}`,
-    context: moduleData,
-    account: kernelAccount,
-  });
+  const userOpReceipt = await sendTransactionFromSafeWithWebAuthn(
+    ownerAccount,
+    smartAccountClient,
+    installModuleCall
+  );
 
-  console.log("opHash", userOpHash);
-
-  await pimlicoClient.waitForUserOperationReceipt({
-    hash: userOpHash,
-  });
-
-  return userOpHash;
+  return userOpReceipt;
 }

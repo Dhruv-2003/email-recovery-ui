@@ -158,6 +158,7 @@ const CompleteRecoveryTime = ({
   );
 };
 
+// TODO: Push the user to the wallet actions page if the acceptance is not done yet for the guardian email, to be done again
 const RequestedRecoveries = () => {
   const { guardianEmail } = useAppContext();
   const navigate = useNavigate();
