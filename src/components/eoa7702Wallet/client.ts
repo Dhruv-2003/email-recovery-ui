@@ -1,18 +1,9 @@
+import { createSmartAccountClient } from "permissionless";
 import {
-  createSmartAccountClient,
-  SmartAccountActions,
-  SmartAccountClient,
-} from "permissionless";
-import {
-  KernelSmartAccountImplementation,
-  type SafeSmartAccountImplementation,
-  toKernelSmartAccount,
+  SafeSmartAccountImplementation,
   toSafeSmartAccount,
 } from "permissionless/accounts";
-import {
-  erc7579Actions,
-  type Erc7579Actions,
-} from "permissionless/actions/erc7579";
+import { erc7579Actions } from "permissionless/actions/erc7579";
 import {
   createPimlicoClient,
   type PimlicoClient,
@@ -29,18 +20,12 @@ import {
   erc7569LaunchpadAddress,
   safe4337ModuleAddress,
 } from "../../../contracts.base-sepolia.json";
-
-import {
-  PasskeyValidatorContractVersion,
-  getValidatorAddress,
-} from "@zerodev/passkey-validator";
-import { KERNEL_V3_1 } from "@zerodev/sdk/constants";
 import { toAccount } from "viem/accounts";
 import {
   RHINESTONE_ATTESTER_ADDRESS,
   MOCK_ATTESTER_ADDRESS,
 } from "@rhinestone/module-sdk";
-import { PublicKey } from "ox";
+
 import { getWebAuthnValidatorFromWebAuthnAccount } from "./utils.ts";
 
 export const publicClient = createPublicClient({
@@ -95,49 +80,6 @@ export const getSafeAccount = async (
         context: webauthnValidator.initData,
       },
     ],
-  });
-};
-
-export const PASSKEY_VALIDATOR = getValidatorAddress(
-  {
-    address: entryPoint07Address,
-    version: "0.7",
-  },
-  KERNEL_V3_1,
-  PasskeyValidatorContractVersion.V0_0_2
-);
-
-export const getKernelAccount = async (
-  owner: WebAuthnAccount,
-  eoaAccount: PrivateKeyAccount
-): Promise<SmartAccount<KernelSmartAccountImplementation>> => {
-  return toKernelSmartAccount({
-    address: eoaAccount.address,
-    client: publicClient,
-    version: "0.3.1",
-    owners: [owner],
-    entryPoint: {
-      address: entryPoint07Address,
-      version: "0.7",
-    },
-    validatorAddress: PASSKEY_VALIDATOR,
-  });
-};
-
-export const getSmartAccountClient = async (
-  owner: WebAuthnAccount,
-  eoaAccount: PrivateKeyAccount
-) => {
-  return createSmartAccountClient({
-    account: await getKernelAccount(owner, eoaAccount),
-    chain: baseSepolia,
-    bundlerTransport: http(config.bundlerUrl),
-    paymaster: pimlicoClient,
-    userOperation: {
-      estimateFeesPerGas: async () => {
-        return (await pimlicoClient.getUserOperationGasPrice()).fast;
-      },
-    },
   });
 };
 

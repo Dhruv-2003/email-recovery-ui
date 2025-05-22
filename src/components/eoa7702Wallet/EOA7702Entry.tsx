@@ -3,13 +3,10 @@ import { useContext, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { privateKeyToAccount } from "viem/accounts";
 import {
-  getKernelAccount,
   publicClient,
-  getSmartAccountClient,
   getSafeAccount,
   getSafeSmartAccountClient,
 } from "./client";
-
 import { StepsContext } from "../../App";
 import { STEPS } from "../../constants";
 import { useBurnerAccount } from "../../context/BurnerAccountContext";
@@ -22,7 +19,7 @@ import {
 } from "viem/account-abstraction";
 import { createWalletClient, http } from "viem";
 import { baseSepolia } from "viem/chains";
-import { upgradeKernel7702, upgradeEOAWith7702 } from "./auth";
+import { upgradeEOAWith7702 } from "./auth";
 
 // TODO: Current connected passkey account is to be shown and allowed for the user to be refreshed if they want
 const EOA7702Entry = () => {
@@ -165,17 +162,9 @@ const EOA7702Entry = () => {
         burnerAccount
       );
 
-      // const kernelAccount = await getKernelAccount(owner, burnerAccount);
-      // const smartAccountClient = await getSmartAccountClient(
-      //   owner,
-      //   burnerAccount
-      // );
-
       await upgradeEOAWith7702(burnerWalletClient, owner);
-      // await upgradeKernel7702(burnerWalletClient, owner);
 
       localStorage.setItem("safeAccount", JSON.stringify(safeAccount));
-      // localStorage.setItem("kernelAccount", JSON.stringify(kernelAccount));
 
       localStorage.setItem(
         "smartAccountClient",

@@ -13,12 +13,9 @@ import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { readContract } from "wagmi/actions";
 import {
-  getKernelAccount,
   publicClient,
-  getSmartAccountClient,
   getSafeAccount,
   getSafeSmartAccountClient,
-  pimlicoClient,
 } from "./client";
 import { universalEmailRecoveryModule } from "../../../contracts.base-sepolia.json";
 import { abi as universalEmailRecoveryModuleAbi } from "../../abi/UniversalEmailRecoveryModule.json";
@@ -92,12 +89,6 @@ const GuardianSetup = () => {
 
   const checkIfRecoveryIsConfigured = useCallback(async () => {
     let burnerWalletAddress;
-
-    // const kernelAccount = localStorage.getItem("kernelAccount");
-
-    // if (kernelAccount) {
-    //   burnerWalletAddress = JSON.parse(kernelAccount).address;
-    // }
 
     const safeAccount = localStorage.getItem("safeAccount");
 
@@ -175,12 +166,6 @@ const GuardianSetup = () => {
         return;
       }
 
-      // const sig = await ownerAccount.signMessage({
-      //   message: "Please sign this message to confirm your identity.",
-      // });
-
-      // console.log("Signature:", sig);
-
       const safeAccount = await getSafeAccount(
         ownerAccount,
         burnerAccount as PrivateKeyAccount
@@ -191,26 +176,15 @@ const GuardianSetup = () => {
         burnerAccount as PrivateKeyAccount
       );
 
-      // const kernelAccount = await getKernelAccount(
-      //   ownerAccount,
-      //   burnerAccount as PrivateKeyAccount
-      // );
-
-      // const smartAccountClient = await getSmartAccountClient(
-      //   ownerAccount,
-      //   burnerAccount as PrivateKeyAccount
-      // );
-
       const accountCode = await genAccountCode();
       await localStorage.setItem("accountCode", accountCode);
-      // console.log(accountCode, "accountCode in configureRecovery"); // Use accountCode directly
       setAccountCode(accountCode as `0x${string}`);
 
       setLoading(true);
 
       console.log("installing module.....");
 
-      // // The run function installs the recovery module, and returns the wallet's address.
+      // The run function installs the recovery module, and returns the wallet's address.
       const userOpReciept = await run(
         accountCode as `0x${string}`,
         guardianEmail,
@@ -219,7 +193,12 @@ const GuardianSetup = () => {
         smartAccountClient,
         recoveryDelay * TIME_UNITS[recoveryDelayUnit].multiplier
       );
-      const txHash = userOpReceipt.receipt.transactionHash;
+
+      if (!userOpReciept) {
+        throw new Error("Failed to install recovery module");
+      }
+
+      const txHash = userOpReciept.receipt.transactionHash;
 
       console.log("Recovery module installed");
 
