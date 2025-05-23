@@ -18,7 +18,6 @@ import { computeGuardianAddress } from "../burnerWallet/helpers/computeGuardianA
 import { universalEmailRecoveryModule } from "../../../contracts.base-sepolia.json";
 import { SmartAccountClient } from "permissionless";
 import { sendTransactionFromSafeWithWebAuthn } from "./utils";
-import kernelV3_1ImplementationAbi from "abi/kernelv3";
 
 /**
  * Executes a series of operations to configure a smart account, including transferring Ether,
@@ -110,7 +109,19 @@ export async function run(
     to: smartAccountClient.account.address as `0x${string}`,
     value: BigInt(0),
     data: encodeFunctionData({
-      abi: kernelV3_1ImplementationAbi,
+      abi: [
+        {
+          inputs: [
+            { internalType: "uint256", name: "moduleType", type: "uint256" },
+            { internalType: "address", name: "module", type: "address" },
+            { internalType: "bytes", name: "initData", type: "bytes" },
+          ],
+          name: "installModule",
+          outputs: [],
+          stateMutability: "nonpayable",
+          type: "function",
+        },
+      ],
       functionName: "installModule",
       args: [
         BigInt(2),

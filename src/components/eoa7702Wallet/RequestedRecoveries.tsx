@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { keccak256, parseAbiParameters, PrivateKeyAccount } from "viem";
 import { encodeAbiParameters } from "viem";
 import { encodeFunctionData } from "viem";
-import { getSmartAccountClient, publicClient } from "./client";
+import { deadOwner, getSafeSmartAccountClient, publicClient } from "./client";
 import { CompleteRecoveryResponseSchema } from "../burnerWallet/types";
 import { universalEmailRecoveryModule } from "../../../contracts.base-sepolia.json";
 import { safeAbi } from "../../abi/Safe";
@@ -25,7 +25,9 @@ import { getPreviousOwnerInLinkedList } from "../../utils/recoveryDataUtils";
 import { Button } from "../Button";
 import InputField from "../InputField";
 import Loader from "../Loader";
-import { useAccount, useWalletClient } from "wagmi";
+import { GuardianConfig } from "./types";
+import { WebAuthnAccount } from "viem/account-abstraction";
+import { sendTransactionFromSafeWithWebAuthn } from "./utils";
 
 const BUTTON_STATES = {
   TRIGGER_RECOVERY: "Trigger Recovery",
@@ -101,7 +103,7 @@ const CompleteRecoveryTime = ({
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [timeLeftRef]); // Empty dependency array - only run on mount
+  }, [timeLeftRef]);
 
   const convertDisplayTime = (timeLeftInSeconds: number): string => {
     if (timeLeftInSeconds <= 0) {
@@ -158,15 +160,11 @@ const CompleteRecoveryTime = ({
   );
 };
 
-// TODO: Push the user to the wallet actions page if the acceptance is not done yet for the guardian email, to be done again
 const RequestedRecoveries = () => {
   const { guardianEmail } = useAppContext();
   const navigate = useNavigate();
-  const { burnerAccountClient, burnerAccount } = useBurnerAccount();
+  const { burnerAccount } = useBurnerAccount();
   const stepsContext = useContext(StepsContext);
-
-  const { data: owner } = useWalletClient();
-  const ownerAccount = useAccount();
 
   const [newOwner, setNewOwner] = useState<`0x${string}`>();
 
@@ -175,6 +173,8 @@ const RequestedRecoveries = () => {
   const [buttonState, setButtonState] = useState(
     BUTTON_STATES.TRIGGER_RECOVERY
   );
+
+  const [ownerAccount] = useState<WebAuthnAccount>();
 
   const [isTriggerRecoveryLoading, setIsTriggerRecoveryLoading] =
     useState<boolean>(false);
@@ -188,6 +188,32 @@ const RequestedRecoveries = () => {
 
   // Use a ref instead of state to avoid re-renders in the parent
   const timeLeftToCompleteRecoveryRef = useRef<number>(0);
+
+  const checkIfRecoveryCanBeInitiated = async () => {
+    setIsRecoveryStatusLoading(true);
+
+    const safeAccount = JSON.parse(
+      localStorage.getItem("safeAccount") as string
+    );
+
+    const getGuardianConfig = (await publicClient.readContract({
+      abi: universalEmailRecoveryModuleAbi,
+      address: universalEmailRecoveryModule as `0x${string}`,
+      functionName: "getGuardianConfig",
+      args: [safeAccount.address],
+    })) as GuardianConfig;
+
+    if (getGuardianConfig.acceptedWeight !== getGuardianConfig.threshold) {
+      setIsRecoveryStatusLoading(false);
+      stepsContext?.setStep(STEPS.CONFIGURE_GUARDIANS);
+    }
+
+    setIsRecoveryStatusLoading(false);
+  };
+
+  useEffect(() => {
+    checkIfRecoveryCanBeInitiated();
+  }, []);
 
   const checkIfRecoveryCanBeCompleted = useCallback(async () => {
     const safeAccount = JSON.parse(
@@ -209,7 +235,6 @@ const RequestedRecoveries = () => {
       args: [safeAccount.address],
     })) as { threshold: number };
 
-    // Update the button state based on the condition. The current weight represents the number of users who have confirmed the email, and the threshold indicates the number of confirmations required before the complete recovery can be called
     if (getRecoveryRequest.currentWeight < getGuardianConfig.threshold) {
       setButtonState(BUTTON_STATES.TRIGGER_RECOVERY);
     } else {
@@ -240,10 +265,6 @@ const RequestedRecoveries = () => {
       throw new Error("new owner not set");
     }
 
-    if (!owner?.account) {
-      throw new Error("owner not connected");
-    }
-
     const safeAccount = JSON.parse(
       localStorage.getItem("safeAccount") as string
     );
@@ -255,7 +276,7 @@ const RequestedRecoveries = () => {
       args: [],
     });
 
-    const oldOwner = owner.account.address;
+    const oldOwner = deadOwner.address;
     const previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
       oldOwner,
       safeOwners as `0x${string}`[]
@@ -289,7 +310,6 @@ const RequestedRecoveries = () => {
       .replace("{string}", recoveryDataHash);
 
     try {
-      // requestId
       await relayer.recoveryRequest(
         universalEmailRecoveryModule as string,
         guardianEmailAddress,
@@ -316,11 +336,6 @@ const RequestedRecoveries = () => {
       localStorage.getItem("safeAccount") as string
     );
 
-    if (!owner?.account && !ownerAccount) {
-      toast.error("owner not connected");
-      throw new Error("owner not connected");
-    }
-
     if (!newOwner) {
       toast.error("new owner not set");
       throw new Error("new owner not set");
@@ -340,7 +355,7 @@ const RequestedRecoveries = () => {
         throw new Error("Recovery delay has not passed");
       }
 
-      const oldOwner = owner.account.address || ownerAccount.address;
+      const oldOwner = deadOwner.address;
       const previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
         oldOwner,
         safeOwners as `0x${string}`[]
@@ -386,28 +401,39 @@ const RequestedRecoveries = () => {
     setIsCancelRecoveryLoading(true);
     setIsTriggerRecoveryLoading(false);
 
-    if (!owner || !owner.account) {
-      toast.error("owner not connected");
-      throw new Error("owner not connected");
-    }
-
     if (!burnerAccount) {
       console.log("burner account not found");
       stepsContext?.setStep(STEPS.CONNECT_WALLETS);
     }
 
+    if (!ownerAccount) {
+      console.log("owner account not found");
+      return;
+    }
+
     try {
-      const burnerAccountSmartClient = await getSmartAccountClient(
-        owner,
+      const smartAccountClient = await getSafeSmartAccountClient(
+        ownerAccount,
         burnerAccount as PrivateKeyAccount
       );
 
-      await burnerAccountSmartClient.writeContract({
-        abi: universalEmailRecoveryModuleAbi,
-        address: universalEmailRecoveryModule as `0x${string}`,
-        functionName: "cancelRecovery",
-        args: [],
-      });
+      const cancelCall = {
+        to: universalEmailRecoveryModule as `0x${string}`,
+        data: encodeFunctionData({
+          abi: universalEmailRecoveryModuleAbi,
+          functionName: "cancelRecovery",
+          args: [],
+        }),
+      };
+
+      const userOpReciept = await sendTransactionFromSafeWithWebAuthn(
+        ownerAccount,
+        //@ts-ignore
+        smartAccountClient,
+        cancelCall
+      );
+
+      console.log("User Operation Reciept:", userOpReciept);
 
       setButtonState(BUTTON_STATES.TRIGGER_RECOVERY);
       toast.success("Recovery Cancelled");
@@ -422,7 +448,7 @@ const RequestedRecoveries = () => {
     } finally {
       setIsCancelRecoveryLoading(false);
     }
-  }, [owner]);
+  }, [ownerAccount]);
 
   const getButtonComponent = () => {
     // Renders the appropriate buttons based on the button state.
@@ -458,7 +484,6 @@ const RequestedRecoveries = () => {
     }
   };
 
-  // Since we are polling for every actions but only wants to show full screen loader for the initial request
   if (
     isRecoveryStatusLoading &&
     !isTriggerRecoveryLoading &&

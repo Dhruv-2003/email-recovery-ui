@@ -21,9 +21,12 @@ import WalletActions from "../components/WalletActions";
 import { STEPS } from "../constants";
 import { BurnerAccountProvider } from "../context/BurnerAccountContext";
 import EOA7702Entry from "../components/eoa7702Wallet/EOA7702Entry";
-import { useAccount } from "wagmi";
+import {
+  useOwnerPasskey,
+  OwnerPasskeyProvider,
+} from "../context/OwnerPasskeyContext";
 
-const EOA7702SafeFlow = () => {
+const EOA7702SafeFlowContent = () => {
   const stepsContext = useContext(StepsContext);
   const [burnerEOAWalletAddress, setBurnerEOAWalletAddress] = useState<
     string | null
@@ -33,7 +36,12 @@ const EOA7702SafeFlow = () => {
     setIsResetBurnerWalletConfirmationModalOpen,
   ] = useState(false);
 
-  const owner = useAccount();
+  const {
+    ownerPasskeyCredential,
+    ownerPasskeyAccount,
+    isLoading: isOwnerPasskeyLoading,
+    setOwnerPasskeyCredential,
+  } = useOwnerPasskey();
 
   useEffect(() => {
     if (!burnerEOAWalletAddress) {
@@ -53,7 +61,6 @@ const EOA7702SafeFlow = () => {
 
   // Create a new burner eoa that will be upgraded to a safe account
   useEffect(() => {
-    // TODO: Remove the owner address directly being used here
     if (!localStorage.getItem("burnerEOA7702Owner")) {
       generateNewAccount().then((newAccount) => {
         setBurnerEOAWalletAddress(newAccount.address);
@@ -111,104 +118,128 @@ const EOA7702SafeFlow = () => {
   };
 
   return (
-    <BurnerAccountProvider>
-      <div className="app">
-        {owner && (
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              paddingBottom: "2rem",
-            }}
-          >
-            {/* The appkit button is a web component (global html), don't require importing*/}
-            <appkit-button />
-          </Box>
-        )}
-
-        {burnerEOAWalletAddress && (
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
-              gap: "4px",
-            }}
-          >
-            <Tooltip
-              title="This is your Smart EOA, upgraded using EIP-7702. It combines the simplicity of an EOA with smart contract capabilities like transaction batching, session keys, and enhanced security features, all controlled by your primary signer."
-              placement="top"
-            >
-              <Typography sx={{ display: "flex", alignItems: "center" }}>
-                Smart EOA (burner):{" "}
-                <a
-                  href={`https://scope.sh/84532/address/${burnerEOAWalletAddress}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    textDecoration: "none",
-                    // color: "inherit",
-                  }}
-                >
-                  {burnerEOAWalletAddress}
-                  <LaunchIcon sx={{ marginLeft: "4px", fontSize: "1rem" }} />
-                </a>
-              </Typography>
-            </Tooltip>
-
-            <Tooltip title="Reset Wallet" placement="top">
-              <IconButton
-                onClick={async () => {
-                  setIsResetBurnerWalletConfirmationModalOpen(true);
-                }}
-                sx={{ padding: "4px" }}
-              >
-                <RestartAltIcon sx={{ fontSize: "1.2rem" }} />
-              </IconButton>
-            </Tooltip>
-          </div>
-        )}
-
-        <Dialog
-          open={isResetBurnerWalletConfirmationModalOpen}
-          keepMounted
-          onClose={setIsResetBurnerWalletConfirmationModalOpen}
-          aria-describedby="alert-dialog-slide-description"
+    <div className="app">
+      {!isOwnerPasskeyLoading && ownerPasskeyCredential && (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            flexDirection: "row",
+            alignItems: "center",
+            paddingBottom: "1rem",
+            gap: "1rem",
+          }}
         >
-          <DialogTitle>{"Reset Burner Wallet"}</DialogTitle>
-          <DialogContent>
-            <DialogContentText id="alert-dialog-slide-description">
-              Are you certain you want to reset the burner wallet? Clicking
-              "Reset" will permanently remove the burner wallet address from the
-              website, and you won't be able to access it again.
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button
-              variant="outlined"
-              onClick={() => setIsResetBurnerWalletConfirmationModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="contained"
-              onClick={async () => {
-                setIsResetBurnerWalletConfirmationModalOpen(false); // Remove these values from localStorage to prevent conflicts with the safe wallet flow.
-                await localStorage.removeItem("burnerEOA7702Owner");
-                await localStorage.removeItem("burnerEOA7702OwnerPrivateKey");
-                window.location.reload();
-                setBurnerEOAWalletAddress(null);
+          <Typography sx={{ fontWeight: "bold" }}>
+            Connected Passkey ID: {ownerPasskeyCredential.id.slice(0, 10)}...
+          </Typography>
+
+          <Tooltip title="Disconnect passkey" placement="top">
+            <IconButton
+              sx={{ padding: "4px" }}
+              onClick={() => {
+                setOwnerPasskeyCredential(null);
+                stepsContext?.setStep(STEPS.CONNECT_WALLETS);
               }}
             >
-              Reset
-            </Button>
-          </DialogActions>
-        </Dialog>
-        {renderBody()}
-      </div>
-    </BurnerAccountProvider>
+              <RestartAltIcon sx={{ fontSize: "1.2rem" }} />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      )}
+
+      {burnerEOAWalletAddress && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            gap: "4px",
+          }}
+        >
+          <Tooltip
+            title="This is your Smart EOA, upgraded using EIP-7702. It combines the simplicity of an EOA with smart contract capabilities like transaction batching, session keys, and enhanced security features, all controlled by your primary signer. NOTE: This is a burner wallet for the demo purpose only."
+            placement="top"
+          >
+            <Typography sx={{ display: "flex", alignItems: "center" }}>
+              Smart EOA (burner):{" "}
+              <a
+                href={`https://scope.sh/84532/address/${burnerEOAWalletAddress}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  textDecoration: "none",
+                  // color: "inherit",
+                }}
+              >
+                {burnerEOAWalletAddress}
+                <LaunchIcon sx={{ marginLeft: "4px", fontSize: "1rem" }} />
+              </a>
+            </Typography>
+          </Tooltip>
+
+          <Tooltip title="Reset Wallet" placement="top">
+            <IconButton
+              onClick={async () => {
+                setIsResetBurnerWalletConfirmationModalOpen(true);
+              }}
+              sx={{ padding: "4px" }}
+            >
+              <RestartAltIcon sx={{ fontSize: "1.2rem" }} />
+            </IconButton>
+          </Tooltip>
+        </div>
+      )}
+
+      <Dialog
+        open={isResetBurnerWalletConfirmationModalOpen}
+        keepMounted
+        onClose={setIsResetBurnerWalletConfirmationModalOpen}
+        aria-describedby="alert-dialog-slide-description"
+      >
+        <DialogTitle>{"Reset Burner Wallet"}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="alert-dialog-slide-description">
+            Are you certain you want to reset the burner wallet? Clicking
+            "Reset" will permanently remove the burner wallet address from the
+            website, and you won't be able to access it again.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button
+            variant="outlined"
+            onClick={() => setIsResetBurnerWalletConfirmationModalOpen(false)}
+          >
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={async () => {
+              setIsResetBurnerWalletConfirmationModalOpen(false); // Remove these values from localStorage to prevent conflicts with the safe wallet flow.
+              await localStorage.removeItem("burnerEOA7702Owner");
+              await localStorage.removeItem("burnerEOA7702OwnerPrivateKey");
+              window.location.reload();
+              setBurnerEOAWalletAddress(null);
+            }}
+          >
+            Reset
+          </Button>
+        </DialogActions>
+      </Dialog>
+      {isOwnerPasskeyLoading ? <p>Loading passkey...</p> : renderBody()}
+    </div>
+  );
+};
+
+const EOA7702SafeFlow = () => {
+  return (
+    <OwnerPasskeyProvider>
+      <BurnerAccountProvider>
+        <EOA7702SafeFlowContent />
+      </BurnerAccountProvider>
+    </OwnerPasskeyProvider>
   );
 };
 

@@ -11,7 +11,6 @@ import {
 } from "@mui/material";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { readContract } from "wagmi/actions";
 import {
   publicClient,
   getSafeAccount,
@@ -24,7 +23,6 @@ import infoIcon from "../../assets/infoIcon.svg";
 import { STEPS } from "../../constants";
 import { useAppContext } from "../../context/AppContextHook";
 import { useBurnerAccount } from "../../context/BurnerAccountContext";
-import { config as appKitConfig } from "../../providers/config";
 import { relayer } from "../../services/relayer";
 import { genAccountCode, templateIdx } from "../../utils/email";
 import { TIME_UNITS } from "../../utils/recoveryDataUtils";
@@ -33,11 +31,7 @@ import Loader from "../Loader";
 import { PrivateKeyAccount } from "viem";
 import { run } from "./deploy";
 import { GuardianConfig, AcceptanceCommandTemplatesResult } from "./types";
-import {
-  P256Credential,
-  toWebAuthnAccount,
-  WebAuthnAccount,
-} from "viem/account-abstraction";
+import { useOwnerPasskey } from "../../context/OwnerPasskeyContext"; // Import the context hook
 
 //logic for valid email address check for input
 const isValidEmail = (email: string) => {
@@ -45,47 +39,24 @@ const isValidEmail = (email: string) => {
   return re.test(String(email).toLowerCase());
 };
 
-// TODO: Add a check to see if the module is installed but the acceptance request is not completed by the user
-// The user will be redirected back from the trigger recovery page if the acceptance request is not completed
-
 const GuardianSetup = () => {
   const { burnerAccountClient, burnerAccount } = useBurnerAccount();
-
   const { guardianEmail, setGuardianEmail, setAccountCode } = useAppContext();
   const stepsContext = useContext(StepsContext);
+  const { ownerPasskeyAccount, isLoading: isOwnerPasskeyLoading } =
+    useOwnerPasskey();
 
   const [isAccountInitializedLoading, setIsAccountInitializedLoading] =
     useState(false);
   const [loading, setLoading] = useState(false);
-
-  // 0 = 2 week default delay, don't do for demo
+  const [moduleInstalled, setModuleInstalled] = useState(false);
   const [recoveryDelay, setRecoveryDelay] = useState(6);
   const [emailError, setEmailError] = useState(false);
   const [recoveryDelayUnit, setRecoveryDelayUnit] = useState<
     keyof typeof TIME_UNITS
-  >(TIME_UNITS.HOURS.value as keyof typeof TIME_UNITS); // Ensure initial value is a valid key
-  const [ownerAccount, setOwnerAccount] = useState<WebAuthnAccount>();
+  >(TIME_UNITS.HOURS.value as keyof typeof TIME_UNITS);
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  const checkPasskeyCredential = async () => {
-    const ownerPasskeyCredential = localStorage.getItem(
-      "ownerPasskeyCredential"
-    );
-    if (
-      ownerPasskeyCredential !== undefined &&
-      ownerPasskeyCredential !== null
-    ) {
-      const credential = JSON.parse(ownerPasskeyCredential) as P256Credential;
-      const account = toWebAuthnAccount({
-        credential,
-      });
-
-      setOwnerAccount(account);
-    } else {
-      stepsContext?.setStep(STEPS.CONNECT_WALLETS);
-    }
-  };
 
   const checkIfRecoveryIsConfigured = useCallback(async () => {
     let burnerWalletAddress;
@@ -101,30 +72,38 @@ const GuardianSetup = () => {
     }
 
     setIsAccountInitializedLoading(true);
-    const getGuardianConfig = (await readContract(appKitConfig, {
+    const getGuardianConfig = (await publicClient.readContract({
       abi: universalEmailRecoveryModuleAbi,
       address: universalEmailRecoveryModule as `0x${string}`,
       functionName: "getGuardianConfig",
       args: [burnerWalletAddress],
     })) as GuardianConfig;
 
-    // Check whether recovery is configured
-    if (
-      getGuardianConfig.acceptedWeight === getGuardianConfig.threshold &&
-      getGuardianConfig.threshold !== 0n
-    ) {
+    // Check whether recovery is configured ( module installed)
+    if (getGuardianConfig.threshold !== 0n) {
+      setModuleInstalled(true);
       setLoading(false);
-      stepsContext?.setStep(STEPS.WALLET_ACTIONS);
+
+      // Check if the guardian has accepted the request
+      if (getGuardianConfig.acceptedWeight === getGuardianConfig.threshold) {
+        stepsContext?.setStep(STEPS.WALLET_ACTIONS);
+      }
     }
     setIsAccountInitializedLoading(false);
   }, [stepsContext]);
 
   useEffect(() => {
     checkIfRecoveryIsConfigured();
-    checkPasskeyCredential();
 
     // If burnerAccountClient (from previous EOA7702 step) is not ready, redirect.
     if (!burnerAccountClient) {
+      stepsContext?.setStep(STEPS.CONNECT_WALLETS);
+      return;
+    }
+
+    // If ownerPasskeyAccount is not loaded yet, wait. If loaded and null, redirect.
+    if (!isOwnerPasskeyLoading && !ownerPasskeyAccount) {
+      toast.error("Owner passkey not found. Please connect your wallet.");
       stepsContext?.setStep(STEPS.CONNECT_WALLETS);
       return;
     }
@@ -135,7 +114,23 @@ const GuardianSetup = () => {
         clearInterval(intervalRef.current);
       }
     };
-  }, [checkIfRecoveryIsConfigured]);
+  }, [
+    checkIfRecoveryIsConfigured,
+    burnerAccountClient,
+    stepsContext,
+    ownerPasskeyAccount,
+    isOwnerPasskeyLoading,
+  ]);
+
+  // To preload guardian email if module is already installed
+  useEffect(() => {
+    if (moduleInstalled) {
+      const storedGuardianEmail = localStorage.getItem("guardianEmail");
+      if (storedGuardianEmail) {
+        setGuardianEmail(storedGuardianEmail);
+      }
+    }
+  }, [moduleInstalled, setGuardianEmail]);
 
   //logic to check if email input is a valid email
   useEffect(() => {
@@ -160,47 +155,66 @@ const GuardianSetup = () => {
         return;
       }
 
-      if (!ownerAccount) {
-        console.log("Owner not connected");
-        toast.error("Owner wallet not connected.");
+      if (!ownerPasskeyAccount) {
+        console.log("Owner passkey account not connected");
+        toast.error("Owner passkey account not connected.");
         return;
       }
 
+      setLoading(true);
+
       const safeAccount = await getSafeAccount(
-        ownerAccount,
+        ownerPasskeyAccount,
         burnerAccount as PrivateKeyAccount
       );
 
       const smartAccountClient = await getSafeSmartAccountClient(
-        ownerAccount,
+        ownerPasskeyAccount,
         burnerAccount as PrivateKeyAccount
       );
 
-      const accountCode = await genAccountCode();
-      await localStorage.setItem("accountCode", accountCode);
-      setAccountCode(accountCode as `0x${string}`);
+      let finalAccountCode: `0x${string}`;
 
-      setLoading(true);
+      if (moduleInstalled) {
+        console.log("Module already installed, skipping installation step.");
+        const storedAccountCode = localStorage.getItem("accountCode");
+        if (!storedAccountCode) {
+          toast.error(
+            "Account code not found in storage despite module being installed. Please reset and try again."
+          );
+          setLoading(false);
+          return;
+        }
+        finalAccountCode = storedAccountCode as `0x${string}`;
+        setAccountCode(finalAccountCode);
+      } else {
+        console.log("Module not installed. Proceeding with installation.");
+        const generatedAccountCode = await genAccountCode();
+        finalAccountCode = generatedAccountCode as `0x${string}`;
 
-      console.log("installing module.....");
+        localStorage.setItem("accountCode", finalAccountCode);
+        setAccountCode(finalAccountCode);
+        localStorage.setItem("guardianEmail", guardianEmail);
 
-      // The run function installs the recovery module, and returns the wallet's address.
-      const userOpReciept = await run(
-        accountCode as `0x${string}`,
-        guardianEmail,
-        ownerAccount,
-        safeAccount,
-        smartAccountClient,
-        recoveryDelay * TIME_UNITS[recoveryDelayUnit].multiplier
-      );
+        console.log("installing module.....");
+        // The run function installs the recovery module, and returns the wallet's address.
+        const userOpReciept = await run(
+          finalAccountCode,
+          guardianEmail,
+          ownerPasskeyAccount,
+          safeAccount,
+          smartAccountClient,
+          recoveryDelay * TIME_UNITS[recoveryDelayUnit].multiplier
+        );
 
-      if (!userOpReciept) {
-        throw new Error("Failed to install recovery module");
+        if (!userOpReciept) {
+          setLoading(false);
+          throw new Error("Failed to install recovery module");
+        }
+
+        // const txHash = userOpReciept.receipt.transactionHash;
+        console.log("Recovery module installed");
       }
-
-      const txHash = userOpReciept.receipt.transactionHash;
-
-      console.log("Recovery module installed");
 
       // This function fetches the command template for the acceptanceRequest API call.
       const subject = (await publicClient.readContract({
@@ -208,14 +222,14 @@ const GuardianSetup = () => {
         address: universalEmailRecoveryModule as `0x${string}`,
         functionName: "acceptanceCommandTemplates",
         args: [],
-      })) as AcceptanceCommandTemplatesResult; // Cast to defined type
+      })) as AcceptanceCommandTemplatesResult;
 
       try {
         // Attempt the API call
         await relayer.acceptanceRequest(
           universalEmailRecoveryModule as `0x${string}`,
           guardianEmail,
-          accountCode.slice(2),
+          finalAccountCode.slice(2),
           templateIdx,
           subject[0]
             .join()
@@ -225,11 +239,11 @@ const GuardianSetup = () => {
       } catch (error) {
         // retry mechanism as this API call fails for the first time
         console.warn("API call failed, retrying...", error);
-        await new Promise((resolve) => setTimeout(resolve, 1000)); // 1 second delay
+        await new Promise((resolve) => setTimeout(resolve, 1000));
         await relayer.acceptanceRequest(
           universalEmailRecoveryModule as `0x${string}`,
           guardianEmail,
-          accountCode.slice(2),
+          finalAccountCode.slice(2),
           templateIdx,
           subject[0]
             .join()
@@ -247,9 +261,9 @@ const GuardianSetup = () => {
 
       // NOTE: Disabling the wait logic for configuring recovery
       // Setting up interval for polling
-      intervalRef.current = setInterval(() => {
-        checkIfRecoveryIsConfigured();
-      }, 5000); // Adjust the interval time (in milliseconds) as needed
+      // intervalRef.current = setInterval(() => {
+      //   checkIfRecoveryIsConfigured();
+      // }, 5000);
 
       stepsContext?.setStep(STEPS.WALLET_ACTIONS);
     } catch (err: any) {
@@ -264,13 +278,14 @@ const GuardianSetup = () => {
     }
   }, [
     guardianEmail,
-    checkIfRecoveryIsConfigured,
     burnerAccountClient,
     burnerAccount,
-    ownerAccount,
+    ownerPasskeyAccount,
     setAccountCode,
     recoveryDelay,
     recoveryDelayUnit,
+    moduleInstalled,
+    stepsContext,
   ]);
 
   if (isAccountInitializedLoading && !loading) {
@@ -422,7 +437,11 @@ const GuardianSetup = () => {
           <Box
             sx={{ width: "330px", marginX: "auto", marginTop: "30px" }}
           ></Box>
-          {ownerAccount ? (
+          {isOwnerPasskeyLoading ? (
+            <Typography sx={{ paddingBottom: "1.5rem" }}>
+              Loading owner passkey...
+            </Typography>
+          ) : ownerPasskeyAccount ? (
             <Button
               disabled={
                 !guardianEmail ||
@@ -436,11 +455,13 @@ const GuardianSetup = () => {
             >
               {loading
                 ? "Configuring..."
-                : "Configure Recovery & Request Guardian"}
+                : moduleInstalled
+                  ? "Resend Guardian Request"
+                  : "Configure Recovery & Request Guardian"}
             </Button>
           ) : (
             <Typography sx={{ paddingBottom: "1.5rem" }}>
-              Wallet Not connected
+              Owner Passkey Not Connected. Please go back and connect.
             </Typography>
           )}
         </Grid>
