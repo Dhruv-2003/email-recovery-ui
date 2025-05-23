@@ -9,6 +9,8 @@ import BurnerWalletFlow from "./pages/burnerWalletFlow";
 import { Web3Provider } from "./providers/Web3Provider";
 import theme from "./theme"; // Import custom theme
 import EOA7702SafeFlow from "./pages/EOA7702SafeFlow";
+import LandingPage from "./pages/landingPage";
+import ErrorPage from "./pages/errorPage";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const StepsContext = createContext<{
@@ -38,13 +40,13 @@ function App() {
             >
               <BrowserRouter>
                 <Routes>
-                  {/* <Route path="/" element={<LandingPage />} /> */}
+                  <Route path="/" element={<LandingPage />} />
                   <Route path="/burner-wallet" element={<BurnerWalletFlow />} />
                   <Route
                     path="/7702-eoa-wallet"
                     element={<EOA7702SafeFlow />}
                   />
-                  {/* <Route path="*" element={<ErrorPage />} /> */}
+                  <Route path="*" element={<ErrorPage />} />
                 </Routes>
               </BrowserRouter>
             </Grid>
