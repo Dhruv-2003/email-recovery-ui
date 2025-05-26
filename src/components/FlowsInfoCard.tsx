@@ -40,10 +40,11 @@ const FlowInfoCard = ({
         borderRadius: "18px",
         padding: "1rem",
         maxWidth: "30rem",
+        position: "relative",
       }}
     >
-      <Grid item>
-        <Box sx={{ position: "absolute", top: "10px", right: "12px" }}>
+      <Grid item sx={{ width: "100%" }}>
+        <Box sx={{ position: "absolute", top: "12px", right: "12px" }}>
           <MoreInfoDialog title={infoIconTitle} message={infoIconDescription} />
         </Box>
         {icon}

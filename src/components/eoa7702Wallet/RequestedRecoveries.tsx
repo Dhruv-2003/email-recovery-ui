@@ -28,6 +28,8 @@ import Loader from "../Loader";
 import { GuardianConfig } from "./types";
 import { WebAuthnAccount } from "viem/account-abstraction";
 import { sendTransactionFromSafeWithWebAuthn } from "./utils";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ConnectionInfoCard from "components/ConnectionInfoCard";
 
 const BUTTON_STATES = {
   TRIGGER_RECOVERY: "Trigger Recovery",
@@ -213,6 +215,14 @@ const RequestedRecoveries = () => {
 
   useEffect(() => {
     checkIfRecoveryCanBeInitiated();
+
+    // Load the guardian email from localStorage if it exists
+    const storedGuardianEmail = localStorage.getItem("guardianEmail");
+    if (storedGuardianEmail) {
+      setGuardianEmailAddress(storedGuardianEmail);
+    } else {
+      setGuardianEmailAddress("");
+    }
   }, []);
 
   const checkIfRecoveryCanBeCompleted = useCallback(async () => {
@@ -250,7 +260,7 @@ const RequestedRecoveries = () => {
 
   const requestRecovery = useCallback(async () => {
     setIsTriggerRecoveryLoading(true);
-    toast("Please check your email and reply to the email", {
+    toast("Please check your email and reply", {
       icon: <img src={infoIcon} />,
       style: {
         background: "white",
@@ -494,22 +504,33 @@ const RequestedRecoveries = () => {
   }
 
   return (
-    <Box>
-      <Grid item xs={12} textAlign={"start"}>
+    <Box
+      sx={{
+        textAlign: "center",
+        marginX: "auto",
+        maxWidth: "600px",
+        padding: "2rem",
+      }}
+    >
+      <Box sx={{ width: "100%", textAlign: "left" }}>
         <Button
           variant="text"
           onClick={() => {
             stepsContext?.setStep(STEPS.WALLET_ACTIONS);
           }}
+          fullWidth={false}
+          sx={{ paddingX: "12px", paddingY: "6px" }}
         >
           ← Back
         </Button>
-      </Grid>
+      </Box>
       {buttonState === BUTTON_STATES.RECOVERY_COMPLETED ? (
         <>
           <Typography variant="h2" sx={{ paddingBottom: "1.25rem" }}>
             Completed Wallet Transfer!
+            <CheckCircleIcon sx={{ color: "green", marginLeft: "0.5rem" }} />
           </Typography>
+          <ConnectionInfoCard />
           <Typography variant="h6" sx={{ paddingBottom: "3.125rem" }}>
             Great job your old wallet has successfully transferred ownership
           </Typography>
@@ -519,13 +540,15 @@ const RequestedRecoveries = () => {
           <Typography variant="h2" sx={{ paddingBottom: "1.25rem" }}>
             Recover Your Wallet
           </Typography>
-          <Typography variant="h6" sx={{ paddingBottom: "3.125rem" }}>
-            Enter your guardian email address and the new wallet you want to
-            transfer to
-          </Typography>
+          <ConnectionInfoCard />
+
           {buttonState === BUTTON_STATES.COMPLETE_RECOVERY ? (
             <CompleteRecoveryTime timeLeftRef={timeLeftToCompleteRecoveryRef} />
-          ) : null}
+          ) : (
+            <Typography variant="h6" sx={{ paddingBottom: "3.125rem" }}>
+              Enter your new wallet address you want to transfer to
+            </Typography>
+          )}
         </>
       )}
 
@@ -554,7 +577,7 @@ const RequestedRecoveries = () => {
             <Typography sx={{ fontWeight: 700 }}>
               Requested Recoveries:
             </Typography>
-            <Grid container gap={3} justifyContent={"space-around"}>
+            <Grid container gap={1} justifyContent={"flex-start"}>
               <Grid item xs={12} sm={5.5}>
                 <InputField
                   type="email"

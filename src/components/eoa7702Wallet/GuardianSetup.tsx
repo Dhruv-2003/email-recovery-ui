@@ -23,6 +23,8 @@ import infoIcon from "../../assets/infoIcon.svg";
 import { STEPS } from "../../constants";
 import { useAppContext } from "../../context/AppContextHook";
 import { useBurnerAccount } from "../../context/BurnerAccountContext";
+import { useOwnerPasskey } from "../../context/OwnerPasskeyContext";
+import ConnectionInfoCard from "../ConnectionInfoCard";
 import { relayer } from "../../services/relayer";
 import { genAccountCode, templateIdx } from "../../utils/email";
 import { TIME_UNITS } from "../../utils/recoveryDataUtils";
@@ -31,7 +33,6 @@ import Loader from "../Loader";
 import { PrivateKeyAccount } from "viem";
 import { run } from "./deploy";
 import { GuardianConfig, AcceptanceCommandTemplatesResult } from "./types";
-import { useOwnerPasskey } from "../../context/OwnerPasskeyContext"; // Import the context hook
 
 //logic for valid email address check for input
 const isValidEmail = (email: string) => {
@@ -293,10 +294,18 @@ const GuardianSetup = () => {
   }
 
   return (
-    <Box>
+    <Box
+      sx={{
+        textAlign: "center",
+        marginX: "auto",
+        maxWidth: "600px",
+        padding: "2rem",
+      }}
+    >
       <Typography variant="h2" sx={{ paddingBottom: "1.5rem" }}>
         Set Up Guardian Details
       </Typography>
+      <ConnectionInfoCard />
       <Typography variant="h6" sx={{ paddingBottom: "5rem" }}>
         Choose a Guardian you trust to be enable wallet recovery via email.
         They'll receive an email request.
@@ -342,7 +351,7 @@ const GuardianSetup = () => {
             <Grid item container xs={6} gap={2}>
               <TextField
                 type="email"
-                size="small"
+                size="medium"
                 fullWidth
                 value={guardianEmail}
                 error={emailError}

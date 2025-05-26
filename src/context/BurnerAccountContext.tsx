@@ -4,8 +4,12 @@ import "viem/window";
 type BurnerAccountContextType = {
   burnerAccountClient: any;
   setBurnerAccountClient: (accountClient: any) => void;
-  burnerAccount: any; // For PrivateKeyAccounts
+  burnerAccount: any;
   setBurnerAccount: (account: any) => void;
+  burnerEOAWalletAddress: string | null;
+  setBurnerEOAWalletAddress: (address: string | null) => void;
+  isResetBurnerWalletConfirmationModalOpen: boolean;
+  setIsResetBurnerWalletConfirmationModalOpen: (isOpen: boolean) => void;
 };
 
 const BurnerAccountContext = createContext<BurnerAccountContextType>({
@@ -13,14 +17,24 @@ const BurnerAccountContext = createContext<BurnerAccountContextType>({
   setBurnerAccountClient: () => {},
   burnerAccount: null,
   setBurnerAccount: () => {},
+  burnerEOAWalletAddress: null,
+  setBurnerEOAWalletAddress: () => {},
+  isResetBurnerWalletConfirmationModalOpen: false,
+  setIsResetBurnerWalletConfirmationModalOpen: () => {},
 });
 
 export const BurnerAccountProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
-  const [burnerAccountClient, setBurnerAccountClient] = useState(null); // Adjust type as needed
-
-  const [burnerAccount, setBurnerAccount] = useState(null); // Adjust type as needed
+  const [burnerAccountClient, setBurnerAccountClient] = useState(null);
+  const [burnerAccount, setBurnerAccount] = useState(null);
+  const [burnerEOAWalletAddress, setBurnerEOAWalletAddress] = useState<
+    string | null
+  >(null);
+  const [
+    isResetBurnerWalletConfirmationModalOpen,
+    setIsResetBurnerWalletConfirmationModalOpen,
+  ] = useState<boolean>(false);
 
   return (
     <BurnerAccountContext.Provider
@@ -29,6 +43,10 @@ export const BurnerAccountProvider: React.FC<{ children: ReactNode }> = ({
         setBurnerAccountClient,
         burnerAccount,
         setBurnerAccount,
+        burnerEOAWalletAddress,
+        setBurnerEOAWalletAddress,
+        isResetBurnerWalletConfirmationModalOpen,
+        setIsResetBurnerWalletConfirmationModalOpen,
       }}
     >
       {children}

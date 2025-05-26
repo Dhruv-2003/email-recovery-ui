@@ -20,8 +20,9 @@ import { createWalletClient, http } from "viem";
 import { baseSepolia } from "viem/chains";
 import { upgradeEOAWith7702 } from "./auth";
 import { useOwnerPasskey } from "../../context/OwnerPasskeyContext";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ConnectionInfoCard from "../ConnectionInfoCard";
 
-// TODO: Current connected passkey account is to be shown and allowed for the user to be refreshed if they want
 const EOA7702Entry = () => {
   const {
     ownerPasskeyCredential,
@@ -199,25 +200,33 @@ const EOA7702Entry = () => {
       {!ownerPasskeyCredential ? (
         <>
           <Typography variant="h2" sx={{ paddingBottom: "1.5rem" }}>
-            <Button
-              onClick={createPassKeyAccount}
-              variant={"contained"}
-              //@ts-ignore
-              sx={{ minWidth: "220px" }}
-            >
-              Create your Passkey
-            </Button>
+            Create Your Passkey
           </Typography>
+          <ConnectionInfoCard />
+          <Button
+            onClick={createPassKeyAccount}
+            variant={"contained"}
+            fullWidth={false}
+            //@ts-ignore
+            sx={{ minWidth: "220px", marginBottom: "1rem" }}
+          >
+            Create
+          </Button>
+
           <Typography
             variant="body1"
-            sx={{ paddingBottom: "2rem", color: "text.secondary" }}
+            sx={{
+              paddingBottom: "2rem",
+              color: "text.secondary",
+              textAlign: "left",
+              whiteSpace: "pre-line",
+            }}
           >
-            To begin, please create a Passkey. This passkey will act as the
-            primary owner for your new Smart Account, upgraded using EIP-7702.
-            EIP-7702 transforms a standard EOA (Externally Owned Account) into a
-            smart contract account, giving you features like transaction
-            batching, session keys, and enhanced security, all controlled by
-            your passkey.
+            {`To begin, please create a Passkey. This will allow you to:
+• Make the passkey the primary owner of your new Smart Account.
+• Upgrade your standard EOA to a Smart Account using EIP-7702.
+• Access features like transaction batching, session keys, and enhanced security.
+• Keep everything controlled by your passkey.`}
           </Typography>
         </>
       ) : !isCodeSet ? (
@@ -225,18 +234,19 @@ const EOA7702Entry = () => {
           <Typography variant="h2" sx={{ paddingBottom: "1.5rem" }}>
             Upgrade Your EOA
           </Typography>
+          <ConnectionInfoCard />
           <Typography
             variant="body1"
-            sx={{ paddingBottom: "0.5rem", color: "text.secondary" }}
+            sx={{
+              paddingBottom: "0.5rem",
+              color: "text.secondary",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
           >
             Your local EOA (burner wallet) is ready.
-          </Typography>
-          <Typography
-            variant="body1"
-            sx={{ paddingBottom: "2rem", color: "text.secondary" }}
-          >
-            Click the button below to upgrade it to a Safe(v1.4.1) smart account
-            using EIP-7702. Your connected passkey will be set as an owner.
+            <CheckCircleIcon sx={{ color: "green", marginLeft: "0.5rem" }} />
           </Typography>
 
           <Button
@@ -253,6 +263,19 @@ const EOA7702Entry = () => {
                 ? "Upgrade to Smart Account"
                 : "Initializing Account..."}
           </Button>
+
+          <Typography
+            variant="body1"
+            sx={{
+              paddingTop: "1rem",
+              paddingBottom: "2rem",
+              color: "text.secondary",
+            }}
+          >
+            Click the button below to upgrade it to a Safe(v1.4.1) smart account
+            using <strong>EIP-7702</strong>. Your connected passkey will be set
+            as an owner.
+          </Typography>
           {!burnerAccount && !isBurnerWalletUpgrading && (
             <Typography
               variant="caption"
@@ -269,6 +292,7 @@ const EOA7702Entry = () => {
           <Typography variant="h2" sx={{ paddingBottom: "1.5rem" }}>
             Account Successfully Upgraded!
           </Typography>
+          <ConnectionInfoCard />
           <Typography
             variant="body1"
             sx={{ paddingBottom: "2rem", color: "text.secondary" }}

@@ -68,11 +68,11 @@ const LandingPage = () => {
                 }}
               />
             }
-            buttonText={"Try Passkey controlled EOA Flow"}
+            buttonText={"Try Passkey Flow"}
             handleButtonClick={() => handleClick("EOA_7702_WALLET")}
-            title={"Passkey EOA (EIP-7702)"}
+            title={"Passkey"}
             description={
-              "Control your EOA with a passkey using EIP-7702. Enables smart account features like social recovery for your existing address."
+              "Control an existing EOA wallet with a passkey. This flow uses EIP-7702 to enable smart account features like social recovery."
             }
             infoIconTitle={"EIP-7702: Passkey-Controlled EOA"}
             infoIconDescription={

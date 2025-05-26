@@ -18,6 +18,10 @@ import { computeGuardianAddress } from "../burnerWallet/helpers/computeGuardianA
 import { universalEmailRecoveryModule } from "../../../contracts.base-sepolia.json";
 import { SmartAccountClient } from "permissionless";
 import { sendTransactionFromSafeWithWebAuthn } from "./utils";
+import {
+  DEFAULT_SIGNER_THRESHOLD,
+  DEFAULT_EXPIRATION_TIME,
+} from "../../constants";
 
 /**
  * Executes a series of operations to configure a smart account, including transferring Ether,
@@ -79,8 +83,8 @@ export async function run(
   );
   const guardians = [guardianAddress];
   const guardianWeights = [1n];
-  const threshold = 1n;
-  const expiry = 2n * 7n * 24n * 60n * 60n; // 2 weeks in seconds
+  const threshold = DEFAULT_SIGNER_THRESHOLD;
+  const expiry = DEFAULT_EXPIRATION_TIME;
 
   const moduleData = encodeAbiParameters(
     [
