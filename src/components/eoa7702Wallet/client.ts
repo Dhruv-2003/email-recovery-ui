@@ -1,3 +1,7 @@
+import {
+  MOCK_ATTESTER_ADDRESS,
+  RHINESTONE_ATTESTER_ADDRESS,
+} from "@rhinestone/module-sdk";
 import { createSmartAccountClient } from "permissionless";
 import {
   SafeSmartAccountImplementation,
@@ -11,22 +15,17 @@ import {
 import { createPublicClient, http, PrivateKeyAccount } from "viem";
 import {
   entryPoint07Address,
-  WebAuthnAccount,
   type SmartAccount,
+  WebAuthnAccount,
 } from "viem/account-abstraction";
+import { toAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
-import config from "../burnerWallet/config";
+import { getWebAuthnValidatorFromWebAuthnAccount } from "./utils.ts";
 import {
   erc7569LaunchpadAddress,
   safe4337ModuleAddress,
 } from "../../../contracts.base-sepolia.json";
-import { toAccount } from "viem/accounts";
-import {
-  RHINESTONE_ATTESTER_ADDRESS,
-  MOCK_ATTESTER_ADDRESS,
-} from "@rhinestone/module-sdk";
-
-import { getWebAuthnValidatorFromWebAuthnAccount } from "./utils.ts";
+import config from "../burnerWallet/config";
 
 export const publicClient = createPublicClient({
   transport: http(config.rpcUrl),
@@ -57,7 +56,7 @@ export const deadOwner = toAccount({
 
 export const getSafeAccount = async (
   owner: WebAuthnAccount,
-  eoaAccount: PrivateKeyAccount
+  eoaAccount: PrivateKeyAccount,
 ): Promise<SmartAccount<SafeSmartAccountImplementation>> => {
   const webauthnValidator = getWebAuthnValidatorFromWebAuthnAccount(owner);
 
@@ -85,7 +84,7 @@ export const getSafeAccount = async (
 
 export const getSafeSmartAccountClient = async (
   owner: WebAuthnAccount,
-  eoaAccount: PrivateKeyAccount
+  eoaAccount: PrivateKeyAccount,
 ) => {
   return createSmartAccountClient({
     account: await getSafeAccount(owner, eoaAccount),

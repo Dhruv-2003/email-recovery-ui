@@ -1,12 +1,16 @@
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { Box, Grid, Typography } from "@mui/material";
+import ConnectionInfoCard from "components/ConnectionInfoCard";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { keccak256, parseAbiParameters, PrivateKeyAccount } from "viem";
 import { encodeAbiParameters } from "viem";
 import { encodeFunctionData } from "viem";
+import { WebAuthnAccount } from "viem/account-abstraction";
 import { deadOwner, getSafeSmartAccountClient, publicClient } from "./client";
-import { CompleteRecoveryResponseSchema } from "../burnerWallet/types";
+import { GuardianConfig } from "./types";
+import { sendTransactionFromSafeWithWebAuthn } from "./utils";
 import { universalEmailRecoveryModule } from "../../../contracts.base-sepolia.json";
 import { safeAbi } from "../../abi/Safe";
 import { abi as universalEmailRecoveryModuleAbi } from "../../abi/UniversalEmailRecoveryModule.json";
@@ -17,19 +21,15 @@ import infoIcon from "../../assets/infoIcon.svg";
 import { STEPS } from "../../constants";
 import { useAppContext } from "../../context/AppContextHook";
 
-import { TIME_UNITS } from "../../utils/recoveryDataUtils";
 import { useBurnerAccount } from "../../context/BurnerAccountContext";
 import { relayer } from "../../services/relayer";
+import { TIME_UNITS } from "../../utils/recoveryDataUtils";
 
 import { getPreviousOwnerInLinkedList } from "../../utils/recoveryDataUtils";
+import { CompleteRecoveryResponseSchema } from "../burnerWallet/types";
 import { Button } from "../Button";
 import InputField from "../InputField";
 import Loader from "../Loader";
-import { GuardianConfig } from "./types";
-import { WebAuthnAccount } from "viem/account-abstraction";
-import { sendTransactionFromSafeWithWebAuthn } from "./utils";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
-import ConnectionInfoCard from "components/ConnectionInfoCard";
 
 const BUTTON_STATES = {
   TRIGGER_RECOVERY: "Trigger Recovery",
@@ -191,7 +191,7 @@ const RequestedRecoveries = () => {
   // Use a ref instead of state to avoid re-renders in the parent
   const timeLeftToCompleteRecoveryRef = useRef<number>(0);
 
-  const checkIfRecoveryCanBeInitiated = async () => {
+  const checkIfRecoveryCanBeInitiated = useCallback(async () => {
     setIsRecoveryStatusLoading(true);
 
     const safeAccount = JSON.parse(
@@ -211,7 +211,7 @@ const RequestedRecoveries = () => {
     }
 
     setIsRecoveryStatusLoading(false);
-  };
+  }, [stepsContext]);
 
   useEffect(() => {
     checkIfRecoveryCanBeInitiated();
@@ -223,7 +223,7 @@ const RequestedRecoveries = () => {
     } else {
       setGuardianEmailAddress("");
     }
-  }, []);
+  }, [checkIfRecoveryCanBeInitiated]);
 
   const checkIfRecoveryCanBeCompleted = useCallback(async () => {
     const safeAccount = JSON.parse(
@@ -330,14 +330,18 @@ const RequestedRecoveries = () => {
       intervalRef.current = setInterval(() => {
         checkIfRecoveryCanBeCompleted();
       }, 5000);
-    } catch (err: any) {
-      console.error("Error in requestRecovery:", err);
-      toast.error(
-        err?.shortMessage ||
-          err?.message ||
-          "Something went wrong while creating recovery request, please try again."
-      );
-      setIsTriggerRecoveryLoading(false);
+    } catch (err: unknown) {
+      if (!(err instanceof Error)) {
+        console.error("Unexpected error type:", err);
+      } else {
+        console.error("Error in requestRecovery:", err);
+        toast.error(
+          err?.shortMessage ||
+            err?.message ||
+            "Something went wrong while creating recovery request, please try again."
+        );
+        setIsTriggerRecoveryLoading(false);
+      }
     }
   }, [guardianEmailAddress, newOwner, checkIfRecoveryCanBeCompleted]);
 
@@ -395,13 +399,17 @@ const RequestedRecoveries = () => {
       }
 
       setButtonState(BUTTON_STATES.RECOVERY_COMPLETED);
-    } catch (err: any) {
-      console.error("Error in completeRecovery:", err);
-      toast.error(
-        err?.shortMessage ||
-          err?.message ||
-          "Something went wrong while completing recovery, please try again."
-      );
+    } catch (err: unknown) {
+      if (!(err instanceof Error)) {
+        console.error("Unexpected error type:", err);
+      } else {
+        console.error("Error in completeRecovery:", err);
+        toast.error(
+          err?.shortMessage ||
+            err?.message ||
+            "Something went wrong while completing recovery, please try again."
+        );
+      }
     } finally {
       setIsCompleteRecoveryLoading(false);
     }
@@ -438,7 +446,6 @@ const RequestedRecoveries = () => {
 
       const userOpReciept = await sendTransactionFromSafeWithWebAuthn(
         ownerAccount,
-        //@ts-ignore
         smartAccountClient,
         cancelCall
       );
@@ -448,17 +455,21 @@ const RequestedRecoveries = () => {
       setButtonState(BUTTON_STATES.TRIGGER_RECOVERY);
       toast.success("Recovery Cancelled");
       console.log("Recovery Cancelled");
-    } catch (err: any) {
-      console.error("Error in cancelRecovery:", err);
-      toast.error(
-        err?.shortMessage ||
-          err?.message ||
-          "Something went wrong while cancelling recovery request, please try again."
-      );
+    } catch (err: unknown) {
+      if (!(err instanceof Error)) {
+        console.error("Unexpected error type:", err);
+      } else {
+        console.error("Error in cancelRecovery:", err);
+        toast.error(
+          err?.shortMessage ||
+            err?.message ||
+            "Something went wrong while cancelling recovery request, please try again."
+        );
+      }
     } finally {
       setIsCancelRecoveryLoading(false);
     }
-  }, [ownerAccount]);
+  }, [ownerAccount, burnerAccount, stepsContext]);
 
   const getButtonComponent = () => {
     // Renders the appropriate buttons based on the button state.

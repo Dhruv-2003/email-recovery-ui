@@ -17,5 +17,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         position: "bottom-center",
       }}
     />
-  </React.StrictMode>
+  </React.StrictMode>,
 );

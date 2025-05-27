@@ -1,15 +1,15 @@
 import {
   createContext,
-  useContext,
-  useState,
-  useEffect,
   ReactNode,
   useCallback,
+  useContext,
+  useEffect,
+  useState,
 } from "react";
 import {
   P256Credential,
-  WebAuthnAccount,
   toWebAuthnAccount,
+  WebAuthnAccount,
 } from "viem/account-abstraction";
 
 interface OwnerPasskeyContextType {
@@ -97,6 +97,7 @@ export const OwnerPasskeyProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useOwnerPasskey = () => {
   const context = useContext(OwnerPasskeyContext);
   if (context === undefined) {

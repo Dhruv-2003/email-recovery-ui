@@ -11,11 +11,14 @@ import {
 } from "@mui/material";
 import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
+import { PrivateKeyAccount } from "viem";
 import {
-  publicClient,
   getSafeAccount,
   getSafeSmartAccountClient,
+  publicClient,
 } from "./client";
+import { run } from "./deploy";
+import { AcceptanceCommandTemplatesResult, GuardianConfig } from "./types";
 import { universalEmailRecoveryModule } from "../../../contracts.base-sepolia.json";
 import { abi as universalEmailRecoveryModuleAbi } from "../../abi/UniversalEmailRecoveryModule.json";
 import { StepsContext } from "../../App";
@@ -24,15 +27,12 @@ import { STEPS } from "../../constants";
 import { useAppContext } from "../../context/AppContextHook";
 import { useBurnerAccount } from "../../context/BurnerAccountContext";
 import { useOwnerPasskey } from "../../context/OwnerPasskeyContext";
-import ConnectionInfoCard from "../ConnectionInfoCard";
 import { relayer } from "../../services/relayer";
 import { genAccountCode, templateIdx } from "../../utils/email";
 import { TIME_UNITS } from "../../utils/recoveryDataUtils";
 import { Button } from "../Button";
+import ConnectionInfoCard from "../ConnectionInfoCard";
 import Loader from "../Loader";
-import { PrivateKeyAccount } from "viem";
-import { run } from "./deploy";
-import { GuardianConfig, AcceptanceCommandTemplatesResult } from "./types";
 
 //logic for valid email address check for input
 const isValidEmail = (email: string) => {
@@ -110,9 +110,10 @@ const GuardianSetup = () => {
     }
 
     // Clean up the interval on component unmount
+    const currentInterval = intervalRef.current;
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+      if (currentInterval) {
+        clearInterval(currentInterval);
       }
     };
   }, [
@@ -267,15 +268,21 @@ const GuardianSetup = () => {
       // }, 5000);
 
       stepsContext?.setStep(STEPS.WALLET_ACTIONS);
-    } catch (err: any) {
-      // Typed err as any to access shortMessage, or use a more specific error type
-      console.error("Error in configureRecoveryAndRequestGuardian:", err);
-      toast.error(
-        err?.shortMessage ||
-          err?.message ||
-          "Something went wrong while configuring guardians, please try again."
-      );
-      setLoading(false);
+    } catch (err: unknown) {
+      if (!(err instanceof Error)) {
+        console.error(
+          "Unexpected error in configureRecoveryAndRequestGuardian:",
+          err
+        );
+      } else {
+        console.error("Error in configureRecoveryAndRequestGuardian:", err);
+        toast.error(
+          err?.shortMessage ||
+            err?.message ||
+            "Something went wrong while configuring guardians, please try again."
+        );
+        setLoading(false);
+      }
     }
   }, [
     guardianEmail,

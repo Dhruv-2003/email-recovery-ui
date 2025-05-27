@@ -1,5 +1,5 @@
-import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 import { baseSepolia } from "@reown/appkit/networks";
+import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 
 export const projectId = import.meta.env.VITE_WALLET_CONNECT_PROJECT_ID;
 

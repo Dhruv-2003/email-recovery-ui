@@ -1,33 +1,30 @@
+import { type Module } from "@rhinestone/module-sdk";
+import {
+  encodeValidatorNonce,
+  getAccount,
+  getWebAuthnValidator,
+  getWebauthnValidatorMockSignature,
+  getWebauthnValidatorSignature,
+  WEBAUTHN_VALIDATOR_ADDRESS,
+} from "@rhinestone/module-sdk";
 import { PublicKey } from "ox";
+import { sign } from "ox/WebAuthnP256";
+import { SmartAccountClient } from "permissionless";
+import { SafeSmartAccountImplementation } from "permissionless/accounts";
+import { getAccountNonce } from "permissionless/actions";
+import { Erc7579Actions } from "permissionless/actions/erc7579";
+import { Call, Chain, Client, RpcSchema, Transport } from "viem";
 import {
   entryPoint07Address,
   getUserOperationHash,
   WebAuthnAccount,
 } from "viem/account-abstraction";
-
-import { type Module } from "@rhinestone/module-sdk";
-
-import { SafeSmartAccountImplementation } from "permissionless/accounts";
-import { Erc7579Actions } from "permissionless/actions/erc7579";
-import { Chain, Client, RpcSchema, Transport } from "viem";
 import { SmartAccount } from "viem/account-abstraction";
-import { SmartAccountClient } from "permissionless";
-import { getAccountNonce } from "permissionless/actions";
-
-import {
-  encodeValidatorNonce,
-  getAccount,
-  getWebauthnValidatorMockSignature,
-  getWebAuthnValidator,
-  WEBAUTHN_VALIDATOR_ADDRESS,
-  getWebauthnValidatorSignature,
-} from "@rhinestone/module-sdk";
 import { baseSepolia } from "viem/chains";
-import { sign } from "ox/WebAuthnP256";
 import { pimlicoClient, publicClient } from "./client";
 
 export const getWebAuthnValidatorFromWebAuthnAccount = (
-  account: WebAuthnAccount
+  account: WebAuthnAccount,
 ): Module => {
   const { x, y, prefix } = PublicKey.from(account.publicKey);
   const webauthnValidator = getWebAuthnValidator({
@@ -48,7 +45,7 @@ export const sendTransactionFromSafeWithWebAuthn = async (
     RpcSchema
   > &
     Erc7579Actions<SmartAccount<SafeSmartAccountImplementation>>,
-  call: any
+  call: Call,
 ) => {
   const nonce = await getAccountNonce(publicClient, {
     address: smartAccountClient.account.address,

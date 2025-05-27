@@ -2,9 +2,13 @@ import React, { createContext, ReactNode, useContext, useState } from "react";
 import "viem/window";
 
 type BurnerAccountContextType = {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   burnerAccountClient: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setBurnerAccountClient: (accountClient: any) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   burnerAccount: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   setBurnerAccount: (account: any) => void;
   burnerEOAWalletAddress: string | null;
   setBurnerEOAWalletAddress: (address: string | null) => void;
@@ -59,7 +63,7 @@ export const useBurnerAccount = () => {
   const context = useContext(BurnerAccountContext);
   if (!context) {
     throw new Error(
-      "useBurnerAccount must be used within a BurnerAccountProvider"
+      "useBurnerAccount must be used within a BurnerAccountProvider",
     );
   }
   return context;

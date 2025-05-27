@@ -1,12 +1,12 @@
 // server.js
+import cors from "cors";
+import dotenv from "dotenv";
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
-import dotenv from "dotenv";
-import cors from "cors";
 
 // Load environment variables from .env file
 dotenv.config();

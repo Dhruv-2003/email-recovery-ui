@@ -1,5 +1,5 @@
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import LaunchIcon from "@mui/icons-material/Launch";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import {
   Box,
   Dialog,
@@ -12,11 +12,11 @@ import {
   Typography,
 } from "@mui/material";
 import { useContext } from "react";
+import { Button } from "./Button";
 import { StepsContext } from "../App";
 import { STEPS } from "../constants";
 import { useBurnerAccount } from "../context/BurnerAccountContext";
 import { useOwnerPasskey } from "../context/OwnerPasskeyContext";
-import { Button } from "./Button";
 
 const ConnectionInfoCard = () => {
   const stepsContext = useContext(StepsContext);

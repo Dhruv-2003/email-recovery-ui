@@ -1,7 +1,8 @@
 import { useContext, useEffect } from "react"; // Removed useState
 import { StepsContext } from "../App";
-import GuardianSetup from "../components/eoa7702Wallet/GuardianSetup";
 import { generateNewAccount } from "../components/burnerWallet/helpers/generateNewAccount";
+import EOA7702Entry from "../components/eoa7702Wallet/EOA7702Entry";
+import GuardianSetup from "../components/eoa7702Wallet/GuardianSetup";
 import RequestedRecoveries from "../components/eoa7702Wallet/RequestedRecoveries";
 import WalletActions from "../components/WalletActions";
 import { STEPS } from "../constants";
@@ -9,10 +10,9 @@ import {
   BurnerAccountProvider,
   useBurnerAccount,
 } from "../context/BurnerAccountContext";
-import EOA7702Entry from "../components/eoa7702Wallet/EOA7702Entry";
 import {
-  useOwnerPasskey,
   OwnerPasskeyProvider,
+  useOwnerPasskey,
 } from "../context/OwnerPasskeyContext";
 
 const EOA7702SafeFlowContent = () => {
@@ -36,7 +36,7 @@ const EOA7702SafeFlowContent = () => {
         }
       }, 1000);
     }
-  }, [burnerEOAWalletAddress]);
+  }, [burnerEOAWalletAddress, setBurnerEOAWalletAddress]);
 
   // Create a new burner eoa that will be upgraded to a safe account
   useEffect(() => {
@@ -55,13 +55,17 @@ const EOA7702SafeFlowContent = () => {
       );
     }
 
-    const handleBeforeUnload = (event: any) => {
-      // Standard across browsers (Chrome, Firefox, etc.)
-      event.preventDefault();
-      event.returnValue = ""; // Required for Chrome to show the alert
+    const handleBeforeUnload = (event: unknown) => {
+      if (!(event instanceof BeforeUnloadEvent)) {
+        console.log("Before unload event triggered");
+      } else {
+        // Standard across browsers (Chrome, Firefox, etc.)
+        event.preventDefault();
+        event.returnValue = ""; // Required for Chrome to show the alert
 
-      // Return any string for some older browsers (though modern browsers ignore it)
-      return "Are you sure you want to leave? Your changes may not be saved.";
+        // Return any string for some older browsers (though modern browsers ignore it)
+        return "Are you sure you want to leave? Your changes may not be saved.";
+      }
     };
 
     // Add event listener
@@ -71,7 +75,7 @@ const EOA7702SafeFlowContent = () => {
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, []);
+  }, [setBurnerEOAWalletAddress]);
 
   const renderBody = () => {
     switch (stepsContext?.step) {

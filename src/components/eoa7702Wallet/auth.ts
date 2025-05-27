@@ -1,4 +1,9 @@
 import {
+  MOCK_ATTESTER_ADDRESS,
+  type Module,
+  RHINESTONE_ATTESTER_ADDRESS,
+} from "@rhinestone/module-sdk";
+import {
   createWalletClient,
   encodeFunctionData,
   Hex,
@@ -8,23 +13,18 @@ import {
   zeroAddress,
 } from "viem";
 import { WebAuthnAccount } from "viem/account-abstraction";
-import {
-  safeSingletonAddress,
-  erc7569LaunchpadAddress,
-  safe4337ModuleAddress,
-} from "../../../contracts.base-sepolia.json";
-import { safeAbi } from "../../abi/Safe";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
-import config from "../burnerWallet/config";
 
-import {
-  RHINESTONE_ATTESTER_ADDRESS,
-  MOCK_ATTESTER_ADDRESS,
-  type Module,
-} from "@rhinestone/module-sdk";
 import { deadOwner } from "./client.ts";
 import { getWebAuthnValidatorFromWebAuthnAccount } from "./utils.ts";
+import {
+  erc7569LaunchpadAddress,
+  safe4337ModuleAddress,
+  safeSingletonAddress,
+} from "../../../contracts.base-sepolia.json";
+import { safeAbi } from "../../abi/Safe";
+import config from "../burnerWallet/config";
 
 if (!import.meta.env.VITE_7702_RELAYER_URL) {
   if (!import.meta.env.VITE_7702_RELAYER_PRIVATE_KEY) {
@@ -38,7 +38,7 @@ const DEFAULT_SIGNER_THRESHOLD = 1n;
 
 export async function upgradeEOAWith7702(
   burner: WalletClient,
-  owner: WebAuthnAccount
+  owner: WebAuthnAccount,
 ): Promise<Hex> {
   const authorization = await burner.signAuthorization({
     account: burner.account!,
@@ -134,7 +134,7 @@ export async function upgradeEOAWith7702(
         .catch(() => ({ message: res.statusText }));
       console.error("Error from relay delegate:", errorData);
       throw new Error(
-        errorData.message || `Request failed with status ${res.status}`
+        errorData.message || `Request failed with status ${res.status}`,
       );
     }
 

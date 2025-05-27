@@ -1,4 +1,5 @@
 import "viem/window";
+import { SmartAccountClient } from "permissionless";
 import { SafeSmartAccountImplementation } from "permissionless/accounts";
 import { Erc7579Actions } from "permissionless/actions/erc7579";
 import {
@@ -14,14 +15,13 @@ import {
 } from "viem";
 import { SmartAccount, WebAuthnAccount } from "viem/account-abstraction";
 import { publicClient } from "./client";
-import { computeGuardianAddress } from "../burnerWallet/helpers/computeGuardianAddress";
-import { universalEmailRecoveryModule } from "../../../contracts.base-sepolia.json";
-import { SmartAccountClient } from "permissionless";
 import { sendTransactionFromSafeWithWebAuthn } from "./utils";
+import { universalEmailRecoveryModule } from "../../../contracts.base-sepolia.json";
 import {
-  DEFAULT_SIGNER_THRESHOLD,
   DEFAULT_EXPIRATION_TIME,
+  DEFAULT_SIGNER_THRESHOLD,
 } from "../../constants";
+import { computeGuardianAddress } from "../burnerWallet/helpers/computeGuardianAddress";
 
 /**
  * Executes a series of operations to configure a smart account, including transferring Ether,
@@ -47,14 +47,14 @@ export async function run(
     RpcSchema
   > &
     Erc7579Actions<SmartAccount<SafeSmartAccountImplementation>>,
-  delay: number
+  delay: number,
 ) {
   console.log("init run");
 
   const guardianAddress = await computeGuardianAddress(
     kernelAccount.address,
     accountCode,
-    guardianEmail
+    guardianEmail,
   );
   console.log(guardianAddress, "guardian address");
 
@@ -79,7 +79,7 @@ export async function run(
   const validator = kernelAccount.address;
   const isInstalledContext = toHex(0);
   const functionSelector = toFunctionSelector(
-    "swapOwner(address,address,address)"
+    "swapOwner(address,address,address)",
   );
   const guardians = [guardianAddress];
   const guardianWeights = [1n];
@@ -106,7 +106,7 @@ export async function run(
       threshold,
       BigInt(delay),
       expiry,
-    ]
+    ],
   );
 
   const installModuleCall = {
@@ -140,7 +140,7 @@ export async function run(
   const userOpReceipt = await sendTransactionFromSafeWithWebAuthn(
     ownerAccount,
     smartAccountClient,
-    installModuleCall
+    installModuleCall,
   );
 
   return userOpReceipt;

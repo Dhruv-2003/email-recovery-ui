@@ -1,7 +1,7 @@
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import KeyIcon from "@mui/icons-material/Key";
 import { Grid, Typography, useTheme } from "@mui/material";
-import { useContext, useState } from "react";
+import { useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { Link } from "react-router-dom";
 import "../App.css";
@@ -11,18 +11,12 @@ import { STEPS } from "../constants";
 
 type actionType = "BURNER_WALLET" | "EOA_7702_WALLET";
 
-type FlowType = "setup" | "recover";
-
 const LandingPage = () => {
   const theme = useTheme();
-  const [flow, setFlow] = useState<FlowType>("setup");
+
   const stepsContext = useContext(StepsContext);
 
   const navigate = useNavigate();
-
-  const handleFlowChange = (newFlow: FlowType) => {
-    setFlow(newFlow);
-  };
 
   const handleClick = async (action: actionType) => {
     await stepsContext?.setStep(STEPS.CONNECT_WALLETS);

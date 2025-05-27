@@ -1,27 +1,27 @@
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
 import { Box, Typography } from "@mui/material";
-import { useContext, useEffect, useRef, useState } from "react";
+import { useCallback, useContext, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { privateKeyToAccount } from "viem/accounts";
-import {
-  publicClient,
-  getSafeAccount,
-  getSafeSmartAccountClient,
-} from "./client";
-import { StepsContext } from "../../App";
-import { STEPS } from "../../constants";
-import { useBurnerAccount } from "../../context/BurnerAccountContext";
-import { Button } from "../Button";
-import Loader from "../Loader";
+import { createWalletClient, http } from "viem";
 import {
   createWebAuthnCredential,
   P256Credential,
 } from "viem/account-abstraction";
-import { createWalletClient, http } from "viem";
+import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
 import { upgradeEOAWith7702 } from "./auth";
+import {
+  getSafeAccount,
+  getSafeSmartAccountClient,
+  publicClient,
+} from "./client";
+import { StepsContext } from "../../App";
+import { STEPS } from "../../constants";
+import { useBurnerAccount } from "../../context/BurnerAccountContext";
 import { useOwnerPasskey } from "../../context/OwnerPasskeyContext";
-import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import { Button } from "../Button";
 import ConnectionInfoCard from "../ConnectionInfoCard";
+import Loader from "../Loader";
 
 const EOA7702Entry = () => {
   const {
@@ -43,7 +43,7 @@ const EOA7702Entry = () => {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check if the burner wallet is already upgraded to a safe account via 7702
-  const checkIfEOA7702AccountInitialized = async () => {
+  const checkIfEOA7702AccountInitialized = useCallback(async () => {
     setIsAccountInitializedLoading(true);
     const burnerEOA7702OwnerAddress =
       localStorage.getItem("burnerEOA7702Owner");
@@ -85,18 +85,19 @@ const EOA7702Entry = () => {
       );
     }
     setIsAccountInitializedLoading(false);
-  };
+  }, [burnerAccount, setBurnerAccount, setBurnerAccountClient, stepsContext]);
 
   // Check if the burner wallet is already present
   useEffect(() => {
     checkIfEOA7702AccountInitialized();
 
+    const currentIntervalRef = intervalRef.current;
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+      if (currentIntervalRef) {
+        clearInterval(currentIntervalRef);
       }
     };
-  }, []);
+  }, [checkIfEOA7702AccountInitialized]);
 
   const createPassKeyAccount = async (): Promise<
     P256Credential | undefined
@@ -169,13 +170,17 @@ const EOA7702Entry = () => {
       setIsCodeSet(true);
       toast.success("EOA successfully upgraded to a smart account!");
       stepsContext?.setStep(STEPS.REQUEST_GUARDIAN);
-    } catch (e: any) {
-      console.error("Error during EOA upgrade:", e);
-      const errorMessage =
-        e.shortMessage ||
-        e.message ||
-        "An unknown error occurred during upgrade.";
-      toast.error(`Upgrade failed: ${errorMessage}`);
+    } catch (e: unknown) {
+      if (!(e instanceof Error)) {
+        console.error("Unexpected error during EOA upgrade:", e);
+      } else {
+        console.error("Error during EOA upgrade:", e);
+        const errorMessage =
+          e.shortMessage ||
+          e.message ||
+          "An unknown error occurred during upgrade.";
+        toast.error(`Upgrade failed: ${errorMessage}`);
+      }
     } finally {
       setIsBurnerWalletUpgrading(false);
     }
@@ -207,7 +212,6 @@ const EOA7702Entry = () => {
             onClick={createPassKeyAccount}
             variant={"contained"}
             fullWidth={false}
-            //@ts-ignore
             sx={{ minWidth: "220px", marginBottom: "1rem" }}
           >
             Create
@@ -254,7 +258,6 @@ const EOA7702Entry = () => {
             loading={isBurnerWalletUpgrading}
             onClick={upgradeEOA}
             variant={"contained"}
-            //@ts-ignore
             sx={{ minWidth: "220px" }}
           >
             {isBurnerWalletUpgrading

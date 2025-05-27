@@ -6,11 +6,11 @@ import NavBar from "./components/Navbar";
 import { STEPS } from "./constants";
 import { AppContextProvider } from "./context/AppContextProvider";
 import BurnerWalletFlow from "./pages/burnerWalletFlow";
+import EOA7702SafeFlow from "./pages/EOA7702SafeFlow";
+import ErrorPage from "./pages/errorPage";
+import LandingPage from "./pages/landingPage";
 import { Web3Provider } from "./providers/Web3Provider";
 import theme from "./theme"; // Import custom theme
-import EOA7702SafeFlow from "./pages/EOA7702SafeFlow";
-import LandingPage from "./pages/landingPage";
-import ErrorPage from "./pages/errorPage";
 
 // eslint-disable-next-line react-refresh/only-export-components
 export const StepsContext = createContext<{
