@@ -15,8 +15,6 @@
     "@emotion/styled": "^11.11.5",
     "@mui/icons-material": "^5.16.0",
     "@mui/material": "^5.16.0",
-    "@reown/appkit": "^1.7.4",
-    "@reown/appkit-adapter-wagmi": "^1.7.4",
     "@rhinestone/module-sdk": "^0.2.8",
     "@safe-global/protocol-kit": "^4.0.2",
     "@svgr/webpack": "^8.1.0",

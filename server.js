@@ -21,17 +21,17 @@ const PORT = process.env.PORT || 3001; // Default to 3001 for local dev
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const RELAY_PRIVATE_KEY = process.env.RELAY_PRIVATE_KEY;
+const RELAYER_PRIVATE_KEY = process.env.RELAYER_PRIVATE_KEY;
 const ALCHEMY_API_KEY = process.env.VITE_ALCHEMY_API_KEY;
 
-if (!RELAY_PRIVATE_KEY || !ALCHEMY_API_KEY) {
+if (!RELAYER_PRIVATE_KEY || !ALCHEMY_API_KEY) {
   console.error(
-    "FATAL ERROR: RELAY_PRIVATE_KEY or ALCHEMY_API_KEY is not defined in the server environment."
+    "FATAL ERROR: RELAYER_PRIVATE_KEY or ALCHEMY_API_KEY is not defined in the server environment."
   );
   process.exit(1); // Exit if the key is not found
 }
 
-const relayAccount = privateKeyToAccount(RELAY_PRIVATE_KEY);
+const relayAccount = privateKeyToAccount(RELAYER_PRIVATE_KEY);
 
 export const relayClient = createWalletClient({
   account: relayAccount,

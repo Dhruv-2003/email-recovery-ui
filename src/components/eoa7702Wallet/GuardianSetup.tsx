@@ -116,8 +116,9 @@ const GuardianSetup = () => {
         clearInterval(currentInterval);
       }
     };
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    checkIfRecoveryIsConfigured,
     burnerAccountClient,
     stepsContext,
     ownerPasskeyAccount,

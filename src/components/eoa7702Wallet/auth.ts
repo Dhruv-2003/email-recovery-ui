@@ -38,7 +38,7 @@ const DEFAULT_SIGNER_THRESHOLD = 1n;
 
 export async function upgradeEOAWith7702(
   burner: WalletClient,
-  owner: WebAuthnAccount,
+  owner: WebAuthnAccount
 ): Promise<Hex> {
   const authorization = await burner.signAuthorization({
     account: burner.account!,
@@ -76,11 +76,11 @@ export async function upgradeEOAWith7702(
   });
   let txHash: Hex;
 
-  const RELAY_PRIVATE_KEY =
+  const RELAYER_PRIVATE_KEY =
     (import.meta.env.VITE_7702_RELAYER_PRIVATE_KEY as `0x${string}`) || "0x";
 
-  if (RELAY_PRIVATE_KEY) {
-    const relayAccount = privateKeyToAccount(RELAY_PRIVATE_KEY);
+  if (RELAYER_PRIVATE_KEY) {
+    const relayAccount = privateKeyToAccount(RELAYER_PRIVATE_KEY);
 
     const relayClient = createWalletClient({
       account: relayAccount,
@@ -134,7 +134,7 @@ export async function upgradeEOAWith7702(
         .catch(() => ({ message: res.statusText }));
       console.error("Error from relay delegate:", errorData);
       throw new Error(
-        errorData.message || `Request failed with status ${res.status}`,
+        errorData.message || `Request failed with status ${res.status}`
       );
     }
 

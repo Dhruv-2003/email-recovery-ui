@@ -223,7 +223,9 @@ const RequestedRecoveries = () => {
     } else {
       setGuardianEmailAddress("");
     }
-  }, [checkIfRecoveryCanBeInitiated]);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const checkIfRecoveryCanBeCompleted = useCallback(async () => {
     const safeAccount = JSON.parse(
@@ -499,7 +501,7 @@ const RequestedRecoveries = () => {
       case BUTTON_STATES.RECOVERY_COMPLETED:
         return (
           <Button variant={"contained"} onClick={() => navigate("/")}>
-            Complete! Connect new wallet to set new guardians ➔
+            Complete! Try another flow ➔
           </Button>
         );
     }

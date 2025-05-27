@@ -97,7 +97,9 @@ const EOA7702Entry = () => {
         clearInterval(currentIntervalRef);
       }
     };
-  }, [checkIfEOA7702AccountInitialized]);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const createPassKeyAccount = async (): Promise<
     P256Credential | undefined
