@@ -20,7 +20,7 @@ interface OwnerPasskeyContextType {
 }
 
 const OwnerPasskeyContext = createContext<OwnerPasskeyContextType | undefined>(
-  undefined
+  undefined,
 );
 
 export const OwnerPasskeyProvider = ({ children }: { children: ReactNode }) => {
@@ -34,7 +34,7 @@ export const OwnerPasskeyProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       const storedCredentialStr = localStorage.getItem(
-        "ownerPasskeyCredential"
+        "ownerPasskeyCredential",
       );
       if (storedCredentialStr) {
         const credential = JSON.parse(storedCredentialStr) as P256Credential;
@@ -47,7 +47,7 @@ export const OwnerPasskeyProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error(
         "Failed to load owner passkey credential from local storage:",
-        error
+        error,
       );
       localStorage.removeItem("ownerPasskeyCredential"); // Clear potentially corrupted item
       setOwnerPasskeyCredentialState(null);
@@ -64,7 +64,7 @@ export const OwnerPasskeyProvider = ({ children }: { children: ReactNode }) => {
         if (credential) {
           localStorage.setItem(
             "ownerPasskeyCredential",
-            JSON.stringify(credential)
+            JSON.stringify(credential),
           );
           setOwnerPasskeyCredentialState(credential);
           const account = toWebAuthnAccount({ credential });
@@ -80,7 +80,7 @@ export const OwnerPasskeyProvider = ({ children }: { children: ReactNode }) => {
         setIsLoading(false);
       }
     },
-    []
+    [],
   );
 
   return (
@@ -102,7 +102,7 @@ export const useOwnerPasskey = () => {
   const context = useContext(OwnerPasskeyContext);
   if (context === undefined) {
     throw new Error(
-      "useOwnerPasskey must be used within an OwnerPasskeyProvider"
+      "useOwnerPasskey must be used within an OwnerPasskeyProvider",
     );
   }
   return context;

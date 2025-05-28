@@ -48,12 +48,12 @@ const EOA7702Entry = () => {
     const burnerEOA7702OwnerAddress =
       localStorage.getItem("burnerEOA7702Owner");
     const burnerEOA7702OwnerPrivateKey = localStorage.getItem(
-      "burnerEOA7702OwnerPrivateKey"
+      "burnerEOA7702OwnerPrivateKey",
     );
     if (burnerEOA7702OwnerAddress && burnerEOA7702OwnerPrivateKey) {
       try {
         const burnerEOA7702Owner = privateKeyToAccount(
-          burnerEOA7702OwnerPrivateKey as `0x${string}`
+          burnerEOA7702OwnerPrivateKey as `0x${string}`,
         );
         setBurnerAccount(burnerEOA7702Owner);
 
@@ -75,13 +75,13 @@ const EOA7702Entry = () => {
       } catch (err) {
         console.error(
           "Error initializing burner account from localStorage:",
-          err
+          err,
         );
         toast.error("Failed to load existing burner account. Please refresh.");
       }
     } else {
       console.warn(
-        "Burner EOA details not found in localStorage. User might need to go through a setup step if this is unexpected."
+        "Burner EOA details not found in localStorage. User might need to go through a setup step if this is unexpected.",
       );
     }
     setIsAccountInitializedLoading(false);
@@ -107,7 +107,7 @@ const EOA7702Entry = () => {
     if (ownerPasskeyCredential) {
       console.log("Passkey already created and in context");
       toast.success(
-        "Passkey already available. Please proceed to the next step."
+        "Passkey already available. Please proceed to the next step.",
       );
       return ownerPasskeyCredential;
     }
@@ -130,7 +130,7 @@ const EOA7702Entry = () => {
 
     if (!ownerPasskeyAccount) {
       toast.error(
-        "Owner passkey account not available. Please create/select a passkey first."
+        "Owner passkey account not available. Please create/select a passkey first.",
       );
       setIsBurnerWalletUpgrading(false);
       return;
@@ -153,11 +153,11 @@ const EOA7702Entry = () => {
     try {
       const safeAccount = await getSafeAccount(
         ownerPasskeyAccount,
-        burnerAccount
+        burnerAccount,
       );
       const smartAccountClient = await getSafeSmartAccountClient(
         ownerPasskeyAccount,
-        burnerAccount
+        burnerAccount,
       );
 
       await upgradeEOAWith7702(burnerWalletClient, ownerPasskeyAccount);
@@ -166,7 +166,7 @@ const EOA7702Entry = () => {
 
       localStorage.setItem(
         "smartAccountClient",
-        JSON.stringify(smartAccountClient)
+        JSON.stringify(smartAccountClient),
       );
 
       setIsCodeSet(true);

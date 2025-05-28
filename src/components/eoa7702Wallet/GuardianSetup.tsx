@@ -168,12 +168,12 @@ const GuardianSetup = () => {
 
       const safeAccount = await getSafeAccount(
         ownerPasskeyAccount,
-        burnerAccount as PrivateKeyAccount
+        burnerAccount as PrivateKeyAccount,
       );
 
       const smartAccountClient = await getSafeSmartAccountClient(
         ownerPasskeyAccount,
-        burnerAccount as PrivateKeyAccount
+        burnerAccount as PrivateKeyAccount,
       );
 
       let finalAccountCode: `0x${string}`;
@@ -183,7 +183,7 @@ const GuardianSetup = () => {
         const storedAccountCode = localStorage.getItem("accountCode");
         if (!storedAccountCode) {
           toast.error(
-            "Account code not found in storage despite module being installed. Please reset and try again."
+            "Account code not found in storage despite module being installed. Please reset and try again.",
           );
           setLoading(false);
           return;
@@ -207,7 +207,7 @@ const GuardianSetup = () => {
           ownerPasskeyAccount,
           safeAccount,
           smartAccountClient,
-          recoveryDelay * TIME_UNITS[recoveryDelayUnit].multiplier
+          recoveryDelay * TIME_UNITS[recoveryDelayUnit].multiplier,
         );
 
         if (!userOpReciept) {
@@ -237,7 +237,7 @@ const GuardianSetup = () => {
           subject[0]
             .join()
             .replace(/,/g, " ")
-            .replace("{ethAddr}", safeAccount.address)
+            .replace("{ethAddr}", safeAccount.address),
         );
       } catch (error) {
         // retry mechanism as this API call fails for the first time
@@ -251,7 +251,7 @@ const GuardianSetup = () => {
           subject[0]
             .join()
             .replace(/,/g, " ")
-            .replace("{ethAddr}", safeAccount.address)
+            .replace("{ethAddr}", safeAccount.address),
         );
       }
 
@@ -273,14 +273,14 @@ const GuardianSetup = () => {
       if (!(err instanceof Error)) {
         console.error(
           "Unexpected error in configureRecoveryAndRequestGuardian:",
-          err
+          err,
         );
       } else {
         console.error("Error in configureRecoveryAndRequestGuardian:", err);
         toast.error(
           err?.shortMessage ||
             err?.message ||
-            "Something went wrong while configuring guardians, please try again."
+            "Something went wrong while configuring guardians, please try again.",
         );
         setLoading(false);
       }
@@ -406,7 +406,7 @@ const GuardianSetup = () => {
                   value={recoveryDelay}
                   onChange={(e) =>
                     setRecoveryDelay(
-                      parseInt((e.target as HTMLInputElement).value)
+                      parseInt((e.target as HTMLInputElement).value),
                     )
                   }
                   error={
@@ -421,7 +421,7 @@ const GuardianSetup = () => {
                   size="small"
                   onChange={(e) =>
                     setRecoveryDelayUnit(
-                      e.target.value as keyof typeof TIME_UNITS
+                      e.target.value as keyof typeof TIME_UNITS,
                     )
                   }
                 >

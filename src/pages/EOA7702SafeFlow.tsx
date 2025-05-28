@@ -17,26 +17,9 @@ import {
 
 const EOA7702SafeFlowContent = () => {
   const stepsContext = useContext(StepsContext);
-  const { burnerEOAWalletAddress, setBurnerEOAWalletAddress } =
-    useBurnerAccount();
+  const { setBurnerEOAWalletAddress } = useBurnerAccount();
 
   const { isLoading: isOwnerPasskeyLoading } = useOwnerPasskey();
-
-  useEffect(() => {
-    if (!burnerEOAWalletAddress) {
-      const burnerWalletAddressPollingInterval = setInterval(() => {
-        const burnerWalletConfig = localStorage.getItem(
-          "burnerEOAWalletConfig"
-        );
-        if (burnerWalletConfig !== undefined && burnerWalletConfig !== null) {
-          setBurnerEOAWalletAddress(
-            JSON.parse(burnerWalletConfig)?.burnerWalletAddress
-          );
-          clearInterval(burnerWalletAddressPollingInterval);
-        }
-      }, 1000);
-    }
-  }, [burnerEOAWalletAddress, setBurnerEOAWalletAddress]);
 
   // Create a new burner eoa that will be upgraded to a safe account
   useEffect(() => {
@@ -46,12 +29,12 @@ const EOA7702SafeFlowContent = () => {
         localStorage.setItem("burnerEOA7702Owner", newAccount.address);
         localStorage.setItem(
           "burnerEOA7702OwnerPrivateKey",
-          newAccount.privateKey
+          newAccount.privateKey,
         );
       });
     } else {
       setBurnerEOAWalletAddress(
-        localStorage.getItem("burnerEOA7702Owner") as string
+        localStorage.getItem("burnerEOA7702Owner") as string,
       );
     }
 

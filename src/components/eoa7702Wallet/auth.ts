@@ -38,7 +38,7 @@ const DEFAULT_SIGNER_THRESHOLD = 1n;
 
 export async function upgradeEOAWith7702(
   burner: WalletClient,
-  owner: WebAuthnAccount
+  owner: WebAuthnAccount,
 ): Promise<Hex> {
   const authorization = await burner.signAuthorization({
     account: burner.account!,
@@ -134,7 +134,7 @@ export async function upgradeEOAWith7702(
         .catch(() => ({ message: res.statusText }));
       console.error("Error from relay delegate:", errorData);
       throw new Error(
-        errorData.message || `Request failed with status ${res.status}`
+        errorData.message || `Request failed with status ${res.status}`,
       );
     }
 

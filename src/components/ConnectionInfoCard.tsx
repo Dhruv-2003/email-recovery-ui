@@ -80,7 +80,7 @@ const ConnectionInfoCard = () => {
             <Typography sx={{ display: "flex", alignItems: "center" }}>
               Smart EOA (burner):{" "}
               <a
-                href={`https://sepolia.etherscan.io/address/${burnerEOAWalletAddress}`}
+                href={`https://scope.sh/84532/address/${burnerEOAWalletAddress}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{
@@ -136,6 +136,11 @@ const ConnectionInfoCard = () => {
               setIsResetBurnerWalletConfirmationModalOpen(false);
               localStorage.removeItem("burnerEOA7702Owner");
               localStorage.removeItem("burnerEOA7702OwnerPrivateKey");
+              localStorage.removeItem("newOwnerAddress");
+              localStorage.removeItem("guardianEmail");
+              localStorage.removeItem("safeAccount");
+              localStorage.removeItem("smartAccountClient");
+              localStorage.removeItem("accountCode");
               // Also clear from context if it's being set there
               setBurnerEOAWalletAddress(null);
               window.location.reload();
