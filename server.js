@@ -2,11 +2,11 @@
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
-import path from "path";
-import { fileURLToPath } from "url";
 import { createWalletClient, http } from "viem";
 import { privateKeyToAccount } from "viem/accounts";
 import { baseSepolia } from "viem/chains";
+import path from "path";
+import { fileURLToPath } from "url";
 
 // Load environment variables from .env file
 dotenv.config();
@@ -26,7 +26,7 @@ const ALCHEMY_API_KEY = process.env.VITE_ALCHEMY_API_KEY;
 
 if (!RELAYER_PRIVATE_KEY || !ALCHEMY_API_KEY) {
   console.error(
-    "FATAL ERROR: RELAYER_PRIVATE_KEY or ALCHEMY_API_KEY is not defined in the server environment.",
+    "FATAL ERROR: RELAYER_PRIVATE_KEY or ALCHEMY_API_KEY is not defined in the server environment."
   );
   process.exit(1); // Exit if the key is not found
 }
