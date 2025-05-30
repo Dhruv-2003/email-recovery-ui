@@ -48,12 +48,12 @@ const EOA7702Entry = () => {
     const burnerEOA7702OwnerAddress =
       localStorage.getItem("burnerEOA7702Owner");
     const burnerEOA7702OwnerPrivateKey = localStorage.getItem(
-      "burnerEOA7702OwnerPrivateKey",
+      "burnerEOA7702OwnerPrivateKey"
     );
     if (burnerEOA7702OwnerAddress && burnerEOA7702OwnerPrivateKey) {
       try {
         const burnerEOA7702Owner = privateKeyToAccount(
-          burnerEOA7702OwnerPrivateKey as `0x${string}`,
+          burnerEOA7702OwnerPrivateKey as `0x${string}`
         );
         setBurnerAccount(burnerEOA7702Owner);
 
@@ -63,7 +63,7 @@ const EOA7702Entry = () => {
 
         if (code !== "0x" && code !== undefined) {
           const burnerWalletClient = createWalletClient({
-            account: burnerAccount,
+            account: burnerEOA7702Owner,
             chain: baseSepolia,
             transport: http(),
           });
@@ -75,17 +75,17 @@ const EOA7702Entry = () => {
       } catch (err) {
         console.error(
           "Error initializing burner account from localStorage:",
-          err,
+          err
         );
         toast.error("Failed to load existing burner account. Please refresh.");
       }
     } else {
       console.warn(
-        "Burner EOA details not found in localStorage. User might need to go through a setup step if this is unexpected.",
+        "Burner EOA details not found in localStorage. User might need to go through a setup step if this is unexpected."
       );
     }
     setIsAccountInitializedLoading(false);
-  }, [burnerAccount, setBurnerAccount, setBurnerAccountClient, stepsContext]);
+  }, [setBurnerAccount, setBurnerAccountClient, stepsContext]);
 
   // Check if the burner wallet is already present
   useEffect(() => {
@@ -107,7 +107,7 @@ const EOA7702Entry = () => {
     if (ownerPasskeyCredential) {
       console.log("Passkey already created and in context");
       toast.success(
-        "Passkey already available. Please proceed to the next step.",
+        "Passkey already available. Please proceed to the next step."
       );
       return ownerPasskeyCredential;
     }
@@ -130,7 +130,7 @@ const EOA7702Entry = () => {
 
     if (!ownerPasskeyAccount) {
       toast.error(
-        "Owner passkey account not available. Please create/select a passkey first.",
+        "Owner passkey account not available. Please create/select a passkey first."
       );
       setIsBurnerWalletUpgrading(false);
       return;
@@ -153,11 +153,11 @@ const EOA7702Entry = () => {
     try {
       const safeAccount = await getSafeAccount(
         ownerPasskeyAccount,
-        burnerAccount,
+        burnerAccount
       );
       const smartAccountClient = await getSafeSmartAccountClient(
         ownerPasskeyAccount,
-        burnerAccount,
+        burnerAccount
       );
 
       await upgradeEOAWith7702(burnerWalletClient, ownerPasskeyAccount);
@@ -166,7 +166,7 @@ const EOA7702Entry = () => {
 
       localStorage.setItem(
         "smartAccountClient",
-        JSON.stringify(smartAccountClient),
+        JSON.stringify(smartAccountClient)
       );
 
       setIsCodeSet(true);
@@ -229,9 +229,9 @@ const EOA7702Entry = () => {
             }}
           >
             {`To begin, please create a Passkey. This will allow you to:
-• Make the passkey the primary owner of your new Smart Account.
-• Upgrade your standard EOA to a Smart Account using EIP-7702.
-• Access features like transaction batching, session keys, and enhanced security.
+• Upgrade the standard burner EOA to a Smart Account using EIP-7702.
+• Make the passkey the primary owner of your new Smart EOA
+• Enables features like transaction batching, session keys, and enhanced security on the EOA
 • Keep everything controlled by your passkey.`}
           </Typography>
         </>
@@ -277,7 +277,7 @@ const EOA7702Entry = () => {
               color: "text.secondary",
             }}
           >
-            Click the button below to upgrade it to a Safe(v1.4.1) smart account
+            Click the button above to upgrade it to a Safe(v1.4.1) smart account
             using <strong>EIP-7702</strong>. Your connected passkey will be set
             as an owner.
           </Typography>

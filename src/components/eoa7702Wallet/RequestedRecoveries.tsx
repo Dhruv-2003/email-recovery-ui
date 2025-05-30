@@ -7,7 +7,6 @@ import { useNavigate } from "react-router-dom";
 import { keccak256, parseAbiParameters, PrivateKeyAccount } from "viem";
 import { encodeAbiParameters } from "viem";
 import { encodeFunctionData } from "viem";
-import { WebAuthnAccount } from "viem/account-abstraction";
 import { getSafeSmartAccountClient, publicClient } from "./client";
 import { GuardianConfig } from "./types";
 import { sendTransactionFromSafeWithWebAuthn } from "./utils";
@@ -22,6 +21,7 @@ import { STEPS } from "../../constants";
 import { useAppContext } from "../../context/AppContextHook";
 
 import { useBurnerAccount } from "../../context/BurnerAccountContext";
+import { useOwnerPasskey } from "../../context/OwnerPasskeyContext";
 import { relayer } from "../../services/relayer";
 import { TIME_UNITS } from "../../utils/recoveryDataUtils";
 
@@ -51,7 +51,7 @@ const CompleteRecoveryTime = ({
     const checkTimeLeft = async () => {
       try {
         const safeAccount = JSON.parse(
-          localStorage.getItem("safeAccount") as string,
+          localStorage.getItem("safeAccount") as string
         );
 
         const recoveryRequest = (await publicClient.readContract({
@@ -127,7 +127,7 @@ const CompleteRecoveryTime = ({
       if (remainingSeconds >= unit.multiplier) {
         const count = Math.floor(remainingSeconds / unit.multiplier);
         parts.push(
-          `${count} ${unit.label}${count > 1 && unit.label.endsWith("s") ? "" : count > 1 && !unit.label.endsWith("s") ? "s" : ""}`,
+          `${count} ${unit.label}${count > 1 && unit.label.endsWith("s") ? "" : count > 1 && !unit.label.endsWith("s") ? "s" : ""}`
         );
         remainingSeconds %= unit.multiplier;
       }
@@ -170,15 +170,14 @@ const RequestedRecoveries = () => {
   } = useAppContext();
   const navigate = useNavigate();
   const { burnerAccount } = useBurnerAccount();
+  const { ownerPasskeyAccount } = useOwnerPasskey();
   const stepsContext = useContext(StepsContext);
 
   const [guardianEmailAddress, setGuardianEmailAddress] =
     useState(guardianEmail);
   const [buttonState, setButtonState] = useState(
-    BUTTON_STATES.TRIGGER_RECOVERY,
+    BUTTON_STATES.TRIGGER_RECOVERY
   );
-
-  const [ownerAccount] = useState<WebAuthnAccount>();
 
   const [isTriggerRecoveryLoading, setIsTriggerRecoveryLoading] =
     useState<boolean>(false);
@@ -197,7 +196,7 @@ const RequestedRecoveries = () => {
     setIsRecoveryStatusLoading(true);
 
     const safeAccount = JSON.parse(
-      localStorage.getItem("safeAccount") as string,
+      localStorage.getItem("safeAccount") as string
     );
 
     const getGuardianConfig = (await publicClient.readContract({
@@ -236,7 +235,7 @@ const RequestedRecoveries = () => {
 
   const checkIfRecoveryCanBeCompleted = useCallback(async () => {
     const safeAccount = JSON.parse(
-      localStorage.getItem("safeAccount") as string,
+      localStorage.getItem("safeAccount") as string
     );
 
     setIsRecoveryStatusLoading(true);
@@ -285,7 +284,7 @@ const RequestedRecoveries = () => {
     }
 
     const safeAccount = JSON.parse(
-      localStorage.getItem("safeAccount") as string,
+      localStorage.getItem("safeAccount") as string
     );
 
     const safeOwners = await publicClient.readContract({
@@ -298,7 +297,7 @@ const RequestedRecoveries = () => {
     const oldOwner = safeOwners[0] as `0x${string}`;
     const previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
       oldOwner,
-      safeOwners as `0x${string}`[],
+      safeOwners as `0x${string}`[]
     );
 
     localStorage.setItem("newOwnerAddress", newOwner);
@@ -311,7 +310,7 @@ const RequestedRecoveries = () => {
 
     const recoveryData = encodeAbiParameters(
       parseAbiParameters("address, bytes"),
-      [safeAccount.address, recoveryCallData],
+      [safeAccount.address, recoveryCallData]
     );
 
     const templateIdx = 0;
@@ -335,7 +334,7 @@ const RequestedRecoveries = () => {
         universalEmailRecoveryModule as string,
         guardianEmailAddress,
         templateIdx,
-        processRecoveryCommand,
+        processRecoveryCommand
       );
 
       intervalRef.current = setInterval(() => {
@@ -349,7 +348,7 @@ const RequestedRecoveries = () => {
         toast.error(
           err?.shortMessage ||
             err?.message ||
-            "Something went wrong while creating recovery request, please try again.",
+            "Something went wrong while creating recovery request, please try again."
         );
         setIsTriggerRecoveryLoading(false);
       }
@@ -358,7 +357,7 @@ const RequestedRecoveries = () => {
 
   const completeRecovery = useCallback(async () => {
     const safeAccount = JSON.parse(
-      localStorage.getItem("safeAccount") as string,
+      localStorage.getItem("safeAccount") as string
     );
 
     if (!newOwner) {
@@ -383,7 +382,7 @@ const RequestedRecoveries = () => {
       const oldOwner = safeOwners[0] as `0x${string}`;
       const previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
         oldOwner,
-        safeOwners as `0x${string}`[],
+        safeOwners as `0x${string}`[]
       );
 
       const recoveryCallData = encodeFunctionData({
@@ -394,13 +393,13 @@ const RequestedRecoveries = () => {
 
       const recoveryData = encodeAbiParameters(
         parseAbiParameters("address, bytes"),
-        [safeAccount.address, recoveryCallData],
+        [safeAccount.address, recoveryCallData]
       );
 
       const completeRecoveryResponse = await relayer.completeRecovery(
         universalEmailRecoveryModule as string,
         safeAccount.address,
-        recoveryData,
+        recoveryData
       );
 
       if (completeRecoveryResponse.status === 200) {
@@ -420,7 +419,7 @@ const RequestedRecoveries = () => {
         toast.error(
           err?.shortMessage ||
             err?.message ||
-            "Something went wrong while completing recovery, please try again.",
+            "Something went wrong while completing recovery, please try again."
         );
       }
     } finally {
@@ -429,23 +428,23 @@ const RequestedRecoveries = () => {
   }, [newOwner]);
 
   const handleCancelRecovery = useCallback(async () => {
-    setIsCancelRecoveryLoading(true);
-    setIsTriggerRecoveryLoading(false);
-
     if (!burnerAccount) {
       console.log("burner account not found");
       stepsContext?.setStep(STEPS.CONNECT_WALLETS);
     }
 
-    if (!ownerAccount) {
+    if (!ownerPasskeyAccount) {
       console.log("owner account not found");
       return;
     }
 
+    setIsCancelRecoveryLoading(true);
+    setIsTriggerRecoveryLoading(false);
+
     try {
       const smartAccountClient = await getSafeSmartAccountClient(
-        ownerAccount,
-        burnerAccount as PrivateKeyAccount,
+        ownerPasskeyAccount,
+        burnerAccount as PrivateKeyAccount
       );
 
       const cancelCall = {
@@ -458,15 +457,15 @@ const RequestedRecoveries = () => {
       };
 
       const userOpReciept = await sendTransactionFromSafeWithWebAuthn(
-        ownerAccount,
+        ownerPasskeyAccount,
         smartAccountClient,
-        cancelCall,
+        cancelCall
       );
 
       console.log("User Operation Reciept:", userOpReciept);
 
       localStorage.removeItem("newOwnerAddress");
-
+      setNewOwner(null);
       setButtonState(BUTTON_STATES.TRIGGER_RECOVERY);
       toast.success("Recovery Cancelled");
       console.log("Recovery Cancelled");
@@ -478,13 +477,13 @@ const RequestedRecoveries = () => {
         toast.error(
           err?.shortMessage ||
             err?.message ||
-            "Something went wrong while cancelling recovery request, please try again.",
+            "Something went wrong while cancelling recovery request, please try again."
         );
       }
     } finally {
       setIsCancelRecoveryLoading(false);
     }
-  }, [ownerAccount, burnerAccount, stepsContext]);
+  }, [ownerPasskeyAccount, setNewOwner, burnerAccount, stepsContext]);
 
   const getButtonComponent = () => {
     // Renders the appropriate buttons based on the button state.
