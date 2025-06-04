@@ -231,7 +231,7 @@ const EOA7702Entry = () => {
             {`To begin, please create a Passkey. This will allow you to:
 • Upgrade the standard burner EOA to a Smart Account using EIP-7702.
 • Make the passkey the primary owner of your new Smart EOA
-• Enables features like transaction batching, session keys, and enhanced security on the EOA
+• Enable features like transaction batching, session keys, and enhanced security on the EOA
 • Keep everything controlled by your passkey.`}
           </Typography>
         </>
