@@ -36,11 +36,11 @@ const EOA7702SafeFlowContent = () => {
         localStorage.setItem("burnerEOA7702Owner", newAccount.address);
         localStorage.setItem(
           "burnerEOA7702OwnerPrivateKey",
-          newAccount.privateKey
+          newAccount.privateKey,
         );
 
         const burnerEOA7702Owner = privateKeyToAccount(
-          newAccount.privateKey as `0x${string}`
+          newAccount.privateKey as `0x${string}`,
         );
         setBurnerAccount(burnerEOA7702Owner);
 
@@ -53,7 +53,7 @@ const EOA7702SafeFlowContent = () => {
       });
     } else {
       setBurnerEOAWalletAddress(
-        localStorage.getItem("burnerEOA7702Owner") as string
+        localStorage.getItem("burnerEOA7702Owner") as string,
       );
     }
 

@@ -51,7 +51,7 @@ const CompleteRecoveryTime = ({
     const checkTimeLeft = async () => {
       try {
         const safeAccount = JSON.parse(
-          localStorage.getItem("safeAccount") as string
+          localStorage.getItem("safeAccount") as string,
         );
 
         const recoveryRequest = (await publicClient.readContract({
@@ -127,7 +127,7 @@ const CompleteRecoveryTime = ({
       if (remainingSeconds >= unit.multiplier) {
         const count = Math.floor(remainingSeconds / unit.multiplier);
         parts.push(
-          `${count} ${unit.label}${count > 1 && unit.label.endsWith("s") ? "" : count > 1 && !unit.label.endsWith("s") ? "s" : ""}`
+          `${count} ${unit.label}${count > 1 && unit.label.endsWith("s") ? "" : count > 1 && !unit.label.endsWith("s") ? "s" : ""}`,
         );
         remainingSeconds %= unit.multiplier;
       }
@@ -176,7 +176,7 @@ const RequestedRecoveries = () => {
   const [guardianEmailAddress, setGuardianEmailAddress] =
     useState(guardianEmail);
   const [buttonState, setButtonState] = useState(
-    BUTTON_STATES.TRIGGER_RECOVERY
+    BUTTON_STATES.TRIGGER_RECOVERY,
   );
 
   const [isTriggerRecoveryLoading, setIsTriggerRecoveryLoading] =
@@ -196,7 +196,7 @@ const RequestedRecoveries = () => {
     setIsRecoveryStatusLoading(true);
 
     const safeAccount = JSON.parse(
-      localStorage.getItem("safeAccount") as string
+      localStorage.getItem("safeAccount") as string,
     );
 
     const getGuardianConfig = (await publicClient.readContract({
@@ -235,7 +235,7 @@ const RequestedRecoveries = () => {
 
   const checkIfRecoveryCanBeCompleted = useCallback(async () => {
     const safeAccount = JSON.parse(
-      localStorage.getItem("safeAccount") as string
+      localStorage.getItem("safeAccount") as string,
     );
 
     setIsRecoveryStatusLoading(true);
@@ -284,7 +284,7 @@ const RequestedRecoveries = () => {
     }
 
     const safeAccount = JSON.parse(
-      localStorage.getItem("safeAccount") as string
+      localStorage.getItem("safeAccount") as string,
     );
 
     const safeOwners = await publicClient.readContract({
@@ -297,7 +297,7 @@ const RequestedRecoveries = () => {
     const oldOwner = safeOwners[0] as `0x${string}`;
     const previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
       oldOwner,
-      safeOwners as `0x${string}`[]
+      safeOwners as `0x${string}`[],
     );
 
     localStorage.setItem("newOwnerAddress", newOwner);
@@ -310,7 +310,7 @@ const RequestedRecoveries = () => {
 
     const recoveryData = encodeAbiParameters(
       parseAbiParameters("address, bytes"),
-      [safeAccount.address, recoveryCallData]
+      [safeAccount.address, recoveryCallData],
     );
 
     const templateIdx = 0;
@@ -334,7 +334,7 @@ const RequestedRecoveries = () => {
         universalEmailRecoveryModule as string,
         guardianEmailAddress,
         templateIdx,
-        processRecoveryCommand
+        processRecoveryCommand,
       );
 
       intervalRef.current = setInterval(() => {
@@ -348,7 +348,7 @@ const RequestedRecoveries = () => {
         toast.error(
           err?.shortMessage ||
             err?.message ||
-            "Something went wrong while creating recovery request, please try again."
+            "Something went wrong while creating recovery request, please try again.",
         );
         setIsTriggerRecoveryLoading(false);
       }
@@ -357,7 +357,7 @@ const RequestedRecoveries = () => {
 
   const completeRecovery = useCallback(async () => {
     const safeAccount = JSON.parse(
-      localStorage.getItem("safeAccount") as string
+      localStorage.getItem("safeAccount") as string,
     );
 
     if (!newOwner) {
@@ -382,7 +382,7 @@ const RequestedRecoveries = () => {
       const oldOwner = safeOwners[0] as `0x${string}`;
       const previousOwnerInLinkedList = getPreviousOwnerInLinkedList(
         oldOwner,
-        safeOwners as `0x${string}`[]
+        safeOwners as `0x${string}`[],
       );
 
       const recoveryCallData = encodeFunctionData({
@@ -393,13 +393,13 @@ const RequestedRecoveries = () => {
 
       const recoveryData = encodeAbiParameters(
         parseAbiParameters("address, bytes"),
-        [safeAccount.address, recoveryCallData]
+        [safeAccount.address, recoveryCallData],
       );
 
       const completeRecoveryResponse = await relayer.completeRecovery(
         universalEmailRecoveryModule as string,
         safeAccount.address,
-        recoveryData
+        recoveryData,
       );
 
       if (completeRecoveryResponse.status === 200) {
@@ -419,7 +419,7 @@ const RequestedRecoveries = () => {
         toast.error(
           err?.shortMessage ||
             err?.message ||
-            "Something went wrong while completing recovery, please try again."
+            "Something went wrong while completing recovery, please try again.",
         );
       }
     } finally {
@@ -444,7 +444,7 @@ const RequestedRecoveries = () => {
     try {
       const smartAccountClient = await getSafeSmartAccountClient(
         ownerPasskeyAccount,
-        burnerAccount as PrivateKeyAccount
+        burnerAccount as PrivateKeyAccount,
       );
 
       const cancelCall = {
@@ -459,7 +459,7 @@ const RequestedRecoveries = () => {
       const userOpReciept = await sendTransactionFromSafeWithWebAuthn(
         ownerPasskeyAccount,
         smartAccountClient,
-        cancelCall
+        cancelCall,
       );
 
       console.log("User Operation Reciept:", userOpReciept);
@@ -477,7 +477,7 @@ const RequestedRecoveries = () => {
         toast.error(
           err?.shortMessage ||
             err?.message ||
-            "Something went wrong while cancelling recovery request, please try again."
+            "Something went wrong while cancelling recovery request, please try again.",
         );
       }
     } finally {
