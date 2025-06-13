@@ -50,7 +50,11 @@ const EOA7702Entry = () => {
     const burnerEOA7702OwnerPrivateKey = localStorage.getItem(
       "burnerEOA7702OwnerPrivateKey",
     );
-    if (burnerEOA7702OwnerAddress && burnerEOA7702OwnerPrivateKey) {
+    if (
+      burnerEOA7702OwnerAddress &&
+      burnerEOA7702OwnerPrivateKey &&
+      ownerPasskeyCredential
+    ) {
       try {
         const burnerEOA7702Owner = privateKeyToAccount(
           burnerEOA7702OwnerPrivateKey as `0x${string}`,
@@ -85,7 +89,12 @@ const EOA7702Entry = () => {
       );
     }
     setIsAccountInitializedLoading(false);
-  }, [setBurnerAccount, setBurnerAccountClient, stepsContext]);
+  }, [
+    setBurnerAccount,
+    setBurnerAccountClient,
+    stepsContext,
+    ownerPasskeyCredential,
+  ]);
 
   // Check if the burner wallet is already present
   useEffect(() => {
@@ -117,6 +126,7 @@ const EOA7702Entry = () => {
       });
       console.log("Passkey created", credential);
       setOwnerPasskeyCredential(credential);
+      checkIfEOA7702AccountInitialized();
       return credential;
     } catch (error) {
       console.error("Error creating passkey:", error);
